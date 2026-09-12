@@ -1,8 +1,8 @@
 // 入口：装配游戏、AI 大脑、HUD 与各类界面
 
-import { Game } from './game/game.js?v=16';
-import { Renderer } from './game/render.js?v=16';
-import { CloudBrain } from './ai/brains.js?v=16';
+import { Game } from './game/game.js?v=17';
+import { Renderer } from './game/render.js?v=17';
+import { CloudBrain } from './ai/brains.js?v=17';
 import { LEVEL_BLUEPRINTS } from './ai/genome.js';
 
 const $ = (id) => document.getElementById(id);
@@ -23,6 +23,7 @@ const KEY_UNLOCK = 'exo_pinch_unlocked';
 const KEY_ENV = 'exo_pinch_env';
 const KEY_ACCESS = 'exo_pinch_access';
 const KEY_REGION = 'exo_pinch_region';
+const KEY_MODEL = 'exo_pinch_model';
 const progress = { unlocked: Math.max(1, Number(localStorage.getItem(KEY_UNLOCK) || 1)) };
 
 let brain = null;
@@ -40,36 +41,56 @@ function showAuthRow(show) {
   if (row) row.classList.toggle('hidden', !show);
 }
 
+/** 读取菜单里选择的「分组|模型」，缺省为 cloudbase|deepseek-v4-flash */
+function readModelChoice() {
+  const fallback = 'cloudbase|deepseek-v4-flash';
+  const raw = ($('model-select')?.value || '') || localStorage.getItem(KEY_MODEL) || fallback;
+  const [group, modelId] = raw.split('|');
+  return { raw, group: group || 'cloudbase', modelId: modelId || 'deepseek-v4-flash' };
+}
+
 /** 依据表单/已存配置取一个 CloudBrain 实例（复用，避免重复加载 SDK） */
 function ensureCloudBrain(envId) {
   const accessKey = ($('env-access')?.value || '').trim() || localStorage.getItem(KEY_ACCESS) || '';
   const region = ($('env-region')?.value || '').trim() || localStorage.getItem(KEY_REGION) || 'ap-shanghai';
+  const choice = readModelChoice();
   if (!envId) { setAIStatus('本地生成脑（未配置云环境）', 'off'); return null; }
   if (!accessKey) { setAIStatus('云脑不可用：请填 publishable accessKey', 'off'); return null; }
-  if (!cloudBrain || cloudBrain.env !== envId || cloudBrain.accessKey !== accessKey || cloudBrain.region !== region) {
-    cloudBrain = new CloudBrain({ env: envId, accessKey, region, onStatus: (s) => setAIStatus(s, 'warn') });
+  const changed = !cloudBrain
+    || cloudBrain.env !== envId
+    || cloudBrain.accessKey !== accessKey
+    || cloudBrain.region !== region
+    || cloudBrain.group !== choice.group
+    || cloudBrain.modelId !== choice.modelId;
+  if (changed) {
+    cloudBrain = new CloudBrain({
+      env: envId, accessKey, region,
+      group: choice.group, modelId: choice.modelId,
+      onStatus: (s) => setAIStatus(s, 'warn'),
+    });
   }
   return cloudBrain;
 }
 
-/** 只持久化配置（即使模型暂不可用，也保留 env/key/region） */
+/** 只持久化配置（即使模型暂不可用，也保留 env/key/region/model） */
 function persistConfig(b) {
   localStorage.setItem(KEY_ENV, b.env);
   localStorage.setItem(KEY_ACCESS, b.accessKey);
   localStorage.setItem(KEY_REGION, b.region);
+  localStorage.setItem(KEY_MODEL, `${b.group}|${b.modelId}`);
 }
 
 /** 登录通过后再真实打一次模型：通了才算接通，否则退回本地脑并如实提示 */
 async function activate(b) {
   persistConfig(b);
   showAuthRow(false);
-  setAIStatus('正在验证模型…', 'warn');
+  setAIStatus(`正在验证 ${b.group} / ${b.modelId}…`, 'warn');
   const probe = await b.probe();
   if (probe.ok) {
     brain = b;
     game.brain = b;
     game.director.cloud = b;
-    setAIStatus(`云脑已连接 · ${b.modelId}`);
+    setAIStatus(`云脑已连接 · ${b.group} / ${b.modelId}`);
     return true;
   }
   brain = null;
@@ -332,6 +353,20 @@ if (savedEnv) {
   $('env-access').value = savedAccess;
   $('env-region').value = savedRegion;
 }
+// 恢复上次选择的模型；若不在预设列表里则回到第一项
+const savedModel = localStorage.getItem(KEY_MODEL) || '';
+if (savedModel && $('model-select')) {
+  $('model-select').value = savedModel;
+  if (!$('model-select').value) $('model-select').selectedIndex = 0;
+}
+// 换模型即重建云脑实例并重新验证
+$('model-select')?.addEventListener('change', () => {
+  cloudBrain = null;
+  localStorage.setItem(KEY_MODEL, $('model-select').value);
+  const envId = ($('env-input')?.value || '').trim() || localStorage.getItem(KEY_ENV) || '';
+  const key = ($('env-access')?.value || '').trim() || localStorage.getItem(KEY_ACCESS) || '';
+  if (envId && key) connectCloud(envId);
+});
 if (savedEnv && savedAccess) connectCloud(savedEnv);
 else setAIStatus('本地生成脑（离线可用）', 'off');
 function backToMenu() {

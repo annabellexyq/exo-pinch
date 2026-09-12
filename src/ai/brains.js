@@ -145,7 +145,7 @@ export class CloudBrain {
     this.accessKey = opts.accessKey || '';
     this.region = opts.region || 'ap-shanghai';
     this.modelId = opts.modelId || 'deepseek-v4-flash';
-    this.group = 'cloudbase';
+    this.group = opts.group || 'cloudbase';
     this.app = null;
     this.ready = false;
     this.reason = this.env ? '' : '未配置 CloudBase 环境 ID';

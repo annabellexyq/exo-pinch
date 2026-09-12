@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>囊泡漂流 EXO-PINCH · 九关物理闯关</title>
-  <link rel="stylesheet" href="./styles.css?v=16" />
-  <link rel="stylesheet" href="./legend.css?v=16" />
+  <link rel="stylesheet" href="./styles.css?v=17" />
+  <link rel="stylesheet" href="./legend.css?v=17" />
 </head>
 <body>
   <canvas id="stage"></canvas>
@@ -117,6 +117,13 @@
         <input id="env-input" placeholder="CloudBase 环境 ID" value="ai-native-d7gjgsyyefdea561d" />
         <input id="env-access" type="password" placeholder="publishable accessKey" />
         <input id="env-region" placeholder="地域，如 ap-shanghai" value="ap-shanghai" />
+        <select id="model-select" title="云脑使用的模型分组 / 模型">
+          <option value="cloudbase|deepseek-v4-flash">cloudbase · deepseek-v4-flash</option>
+          <option value="cloudbase|deepseek-v3.2">cloudbase · deepseek-v3.2</option>
+          <option value="cloudbase|glm-5.3-flash">cloudbase · glm-5.3-flash</option>
+          <option value="hunyuan-v3|hy3-preview">hunyuan-v3 · hy3-preview</option>
+          <option value="hunyuan-v3|hy3">hunyuan-v3 · hy3</option>
+        </select>
         <button id="env-btn">接通灵脑</button>
       </div>
       <div class="ai-row inputs hidden" id="auth-row">
@@ -154,7 +161,7 @@
       btn.addEventListener('pointerup', back);
     })();
   </script>
-  <script type="module" src="./src/legend.js?v=16"></script>
-  <script type="module" src="./src/main.js?v=16"></script>
+  <script type="module" src="./src/legend.js?v=17"></script>
+  <script type="module" src="./src/main.js?v=17"></script>
 </body>
 </html>

@@ -476,6 +476,21 @@ button.primary {
 }
 .ai-row.inputs input:focus { outline: none; border-color: var(--gold-soft); }
 .ai-row.inputs input[type="password"] { letter-spacing: 1px; }
+.ai-row.inputs select {
+  flex: 1 1 0;
+  min-width: 170px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--gold-faint);
+  border-radius: 2px;
+  padding: 9px 10px;
+  color: var(--ink);
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  appearance: none;
+  cursor: pointer;
+}
+.ai-row.inputs select:focus { outline: none; border-color: var(--gold-soft); }
+.ai-row.inputs select option { background: #110b1e; color: var(--ink); }
 
 /* AI 生成的外泌体原画（去背后用 screen 融入暗色卡片） */
 .hero {
