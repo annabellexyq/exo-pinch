@@ -1,8 +1,8 @@
 // 入口：装配游戏、AI 大脑、HUD 与各类界面
 
-import { Game } from './game/game.js?v=17';
-import { Renderer } from './game/render.js?v=17';
-import { CloudBrain } from './ai/brains.js?v=17';
+import { Game } from './game/game.js?v=18';
+import { Renderer } from './game/render.js?v=18';
+import { CloudBrain } from './ai/brains.js?v=18';
 import { LEVEL_BLUEPRINTS } from './ai/genome.js';
 
 const $ = (id) => document.getElementById(id);
@@ -39,6 +39,21 @@ function setAIStatus(text, kind = 'ok') {
 function showAuthRow(show) {
   const row = $('auth-row');
   if (row) row.classList.toggle('hidden', !show);
+}
+
+/** HUD 右上角标明当前用的是云脑还是本地脑（brain 为空即本地） */
+function syncBrainBadge() {
+  const el = $('brain-badge');
+  if (!el) return;
+  if (brain) {
+    el.className = 'brain-badge cloud';
+    el.textContent = '云脑';
+    el.title = `关卡由 CloudBase 云脑生成：${brain.group} / ${brain.modelId}`;
+  } else {
+    el.className = 'brain-badge local';
+    el.textContent = '本地脑';
+    el.title = '关卡由内置本地脑生成（离线可用）';
+  }
 }
 
 /** 读取菜单里选择的「分组|模型」，缺省为 cloudbase|deepseek-v4-flash */
@@ -91,12 +106,14 @@ async function activate(b) {
     game.brain = b;
     game.director.cloud = b;
     setAIStatus(`云脑已连接 · ${b.group} / ${b.modelId}`);
+    syncBrainBadge();
     return true;
   }
   brain = null;
   game.brain = null;
   game.director.cloud = null;
   setAIStatus(`${probe.reason} · 已降级本地脑`, 'off');
+  syncBrainBadge();
   return false;
 }
 
@@ -109,6 +126,7 @@ async function connectCloud(envId) {
   } else {
     setAIStatus(`${b.reason || '云脑不可用'} · 已降级本地脑`, 'off');
     showAuthRow(/登录/.test(b.reason || ''));
+    syncBrainBadge();
   }
 }
 
@@ -369,6 +387,7 @@ $('model-select')?.addEventListener('change', () => {
 });
 if (savedEnv && savedAccess) connectCloud(savedEnv);
 else setAIStatus('本地生成脑（离线可用）', 'off');
+syncBrainBadge();
 function backToMenu() {
   game.state = 'menu';
   game.input.down = false;
