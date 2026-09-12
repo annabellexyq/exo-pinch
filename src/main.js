@@ -1,8 +1,8 @@
 // 入口：装配游戏、AI 大脑、HUD 与各类界面
 
-import { Game } from './game/game.js?v=20';
-import { Renderer } from './game/render.js?v=20';
-import { CloudBrain } from './ai/brains.js?v=20';
+import { Game } from './game/game.js?v=21';
+import { Renderer } from './game/render.js?v=21';
+import { CloudBrain } from './ai/brains.js?v=21';
 import { LEVEL_BLUEPRINTS } from './ai/genome.js';
 
 const $ = (id) => document.getElementById(id);
@@ -58,19 +58,19 @@ function syncBrainBadge() {
 
 /** 把云脑错误码换成好读的中文（原始信息很长，手机上会把状态栏撑成好几行） */
 const BRAIN_ERR_TEXT = {
-  EXCEED_TOKEN_QUOTA_LIMIT: '额度不足：环境还没买 Token 资源包',
-  AI_MODEL_NOT_SUPPORTED: '该模型未启用（个人版可能不支持该分组）',
-  AI_MODEL_NOT_FOUND: '模型分组不存在',
+  EXCEED_TOKEN_QUOTA_LIMIT: '额度不足（未买资源包）',
+  AI_MODEL_NOT_SUPPORTED: '该模型未启用',
+  AI_MODEL_NOT_FOUND: '分组不存在',
   AI_MODEL_DISABLED: '模型已停用',
   AI_MODEL_CONFIG_MISSING: '缺少模型配置',
-  EXCEED_CONCURRENT_REQUEST_LIMIT: '并发超限，稍后再试',
+  EXCEED_CONCURRENT_REQUEST_LIMIT: '并发超限',
 };
 function friendlyBrainError(raw) {
   const s = String(raw || '');
   for (const [code, text] of Object.entries(BRAIN_ERR_TEXT)) {
     if (s.includes(code)) return text;
   }
-  return s.length > 48 ? `${s.slice(0, 45)}…` : s;
+  return s.length > 32 ? `${s.slice(0, 29)}…` : s;
 }
 
 /** 读取菜单里选择的「分组|模型」，缺省为 cloudbase|deepseek-v4-flash */
@@ -116,13 +116,13 @@ function persistConfig(b) {
 async function activate(b) {
   persistConfig(b);
   showAuthRow(false);
-  setAIStatus(`正在验证 ${b.group} / ${b.modelId}…`, 'warn');
+  setAIStatus(`正在验证 ${b.modelId}…`, 'warn');
   const probe = await b.probe();
   if (probe.ok) {
     brain = b;
     game.brain = b;
     game.director.cloud = b;
-    setAIStatus(`云脑已连接 · ${b.group} / ${b.modelId}`);
+    setAIStatus(`云脑已连接 · ${b.modelId}`);
     syncBrainBadge();
     return true;
   }

@@ -473,6 +473,15 @@ button.primary {
 }
 .ai-dot.off { background: #4a4358; box-shadow: none; }
 .ai-dot.warn { background: var(--blood); box-shadow: 0 0 14px var(--blood); }
+#ai-dot { flex: 0 0 auto; }
+/* 状态文字始终单行：过长用省略号，避免手机上折成两行 */
+#ai-status {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .ai-row.inputs {
   padding-top: 0;
   border-top: 0;
@@ -625,4 +634,16 @@ button.primary {
     letter-spacing: 2px;
     white-space: nowrap;
   }
+
+  /* 输入框改成一行一个：长环境 ID / 模型名不再被截断 */
+  .ai-row.inputs { gap: 8px; }
+  .ai-row.inputs input,
+  .ai-row.inputs select,
+  .ai-row.inputs button { flex: 1 1 100%; min-width: 0; }
+  .ai-row.inputs input,
+  .ai-row.inputs select { font-size: 11.5px; }
+
+  /* 状态行改小字，保持单行 */
+  .ai-row.status { gap: 8px; }
+  #ai-status { font-size: 10.5px; letter-spacing: 0.5px; }
 }
