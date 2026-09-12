@@ -9,8 +9,9 @@
 
 - 仓库：`https://github.com/annabellexyq/exo-pinch`（`main` 分支；Pages 从该分支根目录构建，推送后 1～3 分钟生效）
 - 腾讯云托管：环境 `ai-native-d7gjgsyyefdea561d`（上海 ap-shanghai），托管路径 `exo-pinch/`
-  - ⚠️ 该环境的静态托管**根目录 `/` 已被「游医天下」占用**，本项目只放 `/exo-pinch/`，**切勿部署到根目录**（会覆盖别的项目入口）
-  - ⚠️ 环境里那个 `youyitianxia-*.webapps.tcloudbase.com` 域名是按「游医天下」的项目名注册的，**不要对外用**；本项目统一用 `tcloudbaseapp.com` 域名
+  - ⚠️ 该环境的静态托管只有**一个根目录**，根 `/` 归「窗外信使」，本项目只放 `/exo-pinch/`，**切勿部署到根目录**（会覆盖别的项目入口）
+  - ⚠️ 同环境另有「游医天下」在 `/youyi/`，不要互相覆盖
+  - ⚠️ 环境里那个 `youyitianxia-*.webapps.tcloudbase.com` 域名是按「游医天下」的项目名注册的，但它与 `tcloudbaseapp.com` 指向同一份内容、根路径显示的是「窗外信使」，**不要对外用**；本项目统一用 `tcloudbaseapp.com` 域名
 - 部署命令
   - GitHub：`git push origin main`
   - 腾讯云：`npx -p @cloudbase/cli tcb hosting deploy . exo-pinch -e ai-native-d7gjgsyyefdea561d`
