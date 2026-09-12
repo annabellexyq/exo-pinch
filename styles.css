@@ -614,4 +614,15 @@ button.primary {
     bottom: 10px;
     font-size: 11px;
   }
+
+  /* 菜单 / 结算里的按钮行：手机上保持同一行，不再折成 2+1 */
+  .row { flex-wrap: nowrap; gap: 8px; }
+  .row button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 11px 6px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
 }
