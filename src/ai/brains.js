@@ -104,15 +104,16 @@ export function generateLocalGenome(blueprint, seed, profile = {}) {
 /*  云脑：CloudBase AI（可选）。未配置 env / 未登录 / 调用失败 -> 返回 null，由调用方降级 */
 /* ------------------------------------------------------------------ */
 
-const SDK_CDN = 'https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@2.7.1/dist/cloudbase.full.js';
+const SDK_CDN = 'https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@3/dist/cloudbase.full.js';
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     if (typeof document === 'undefined') return reject(new Error('非浏览器环境'));
     const s = document.createElement('script');
     s.src = src;
+    s.crossOrigin = 'anonymous';
     s.onload = resolve;
-    s.onerror = () => reject(new Error('无法加载 CloudBase SDK'));
+    s.onerror = () => reject(new Error('无法加载 CloudBase SDK，请检查网络或刷新重试'));
     document.head.appendChild(s);
   });
 }
@@ -120,6 +121,8 @@ function loadScript(src) {
 export class CloudBrain {
   constructor(opts = {}) {
     this.env = opts.env || '';
+    this.accessKey = opts.accessKey || '';
+    this.region = opts.region || 'ap-shanghai';
     this.modelId = opts.modelId || 'deepseek-v4-flash';
     this.group = 'cloudbase';
     this.app = null;
@@ -129,19 +132,31 @@ export class CloudBrain {
   }
 
   async init() {
-    if (!this.env) return false;
+    if (!this.env) { this.reason = '未配置 CloudBase 环境 ID'; return false; }
+    if (!this.accessKey) { this.reason = '缺少 publishable accessKey（环境 API Key）'; return false; }
     try {
       this.onStatus('正在连接 CloudBase…');
-      let cloudbase = typeof window !== 'undefined' ? window.cloudbase : null;
+      let cloudbase = typeof window !== 'undefined' ? (window.cloudbase || window.cloudbase?.default) : null;
       if (!cloudbase) {
         await loadScript(SDK_CDN);
-        cloudbase = window.cloudbase;
+        cloudbase = window.cloudbase || window.cloudbase?.default;
       }
       if (!cloudbase) throw new Error('CloudBase SDK 加载失败');
-      this.app = cloudbase.init({ env: this.env });
-      const { data } = await this.app.auth.getSession();
+      this.app = cloudbase.init({
+        env: this.env,
+        region: this.region,
+        accessKey: this.accessKey,
+        auth: { detectSessionInUrl: true },
+      });
+      const { data, error } = await this.app.auth.getSession();
+      if (error) throw new Error(error.message || '获取登录态失败');
       const session = data && data.session;
-      if (!session || session.user?.is_anonymous) {
+      if (!session) {
+        this.reason = '尚未登录：云脑需要真实用户登录';
+        this.onStatus(this.reason);
+        return false;
+      }
+      if (session.user?.is_anonymous) {
         this.reason = 'AI 能力需要真实登录（匿名用户无权调用模型）';
         this.onStatus(this.reason);
         return false;

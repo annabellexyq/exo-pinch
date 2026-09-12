@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>囊泡漂流 EXO-PINCH · 九关物理闯关</title>
-  <link rel="stylesheet" href="./styles.css?v=11" />
-  <link rel="stylesheet" href="./legend.css?v=11" />
+  <link rel="stylesheet" href="./styles.css?v=12" />
+  <link rel="stylesheet" href="./legend.css?v=12" />
 </head>
 <body>
   <canvas id="stage"></canvas>
@@ -114,7 +114,11 @@
       <div class="ai-row">
         <span class="ai-dot" id="ai-dot"></span>
         <span id="ai-status">AI 大脑：本地生成脑（离线可用）</span>
-        <input id="env-input" placeholder="CloudBase 环境 ID（可选，接云脑）" />
+      </div>
+      <div class="ai-row inputs">
+        <input id="env-input" placeholder="CloudBase 环境 ID" />
+        <input id="env-access" type="password" placeholder="publishable accessKey" />
+        <input id="env-region" placeholder="地域，如 ap-shanghai" value="ap-shanghai" />
         <button id="env-btn">接通灵脑</button>
       </div>
       <div class="row">
@@ -147,7 +151,7 @@
       btn.addEventListener('pointerup', back);
     })();
   </script>
-  <script type="module" src="./src/legend.js?v=11"></script>
-  <script type="module" src="./src/main.js?v=11"></script>
+  <script type="module" src="./src/legend.js?v=12"></script>
+  <script type="module" src="./src/main.js?v=12"></script>
 </body>
 </html>

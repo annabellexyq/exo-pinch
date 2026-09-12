@@ -1,8 +1,8 @@
 // 入口：装配游戏、AI 大脑、HUD 与各类界面
 
-import { Game } from './game/game.js?v=11';
-import { Renderer } from './game/render.js?v=11';
-import { CloudBrain } from './ai/brains.js';
+import { Game } from './game/game.js?v=12';
+import { Renderer } from './game/render.js?v=12';
+import { CloudBrain } from './ai/brains.js?v=12';
 import { LEVEL_BLUEPRINTS } from './ai/genome.js';
 
 const $ = (id) => document.getElementById(id);
@@ -21,6 +21,8 @@ resize();
 
 const KEY_UNLOCK = 'exo_pinch_unlocked';
 const KEY_ENV = 'exo_pinch_env';
+const KEY_ACCESS = 'exo_pinch_access';
+const KEY_REGION = 'exo_pinch_region';
 const progress = { unlocked: Math.max(1, Number(localStorage.getItem(KEY_UNLOCK) || 1)) };
 
 let brain = null;
@@ -33,13 +35,18 @@ function setAIStatus(text, kind = 'ok') {
 
 async function connectCloud(envId) {
   if (!envId) { setAIStatus('本地生成脑（未配置云环境）', 'off'); return; }
-  const b = new CloudBrain({ env: envId, onStatus: (s) => setAIStatus(s, 'warn') });
+  const accessKey = ($('env-access')?.value || '').trim() || localStorage.getItem(KEY_ACCESS) || '';
+  const region = ($('env-region')?.value || '').trim() || localStorage.getItem(KEY_REGION) || 'ap-shanghai';
+  if (!accessKey) { setAIStatus('云脑不可用：请输入 publishable accessKey', 'off'); return; }
+  const b = new CloudBrain({ env: envId, accessKey, region, onStatus: (s) => setAIStatus(s, 'warn') });
   const ok = await b.init();
   if (ok) {
     brain = b;
     game.brain = b;
     game.director.cloud = b;
     localStorage.setItem(KEY_ENV, envId);
+    localStorage.setItem(KEY_ACCESS, accessKey);
+    localStorage.setItem(KEY_REGION, region);
     setAIStatus(`云脑已连接 · ${b.modelId}`);
   } else {
     setAIStatus(`${b.reason || '云脑不可用'} · 已降级本地脑`, 'off');
@@ -264,9 +271,14 @@ $('env-btn').onclick = () => connectCloud($('env-input').value.trim());
 
 renderLevelGrid();
 const savedEnv = localStorage.getItem(KEY_ENV) || new URLSearchParams(location.search).get('env') || '';
+const savedAccess = localStorage.getItem(KEY_ACCESS) || '';
+const savedRegion = localStorage.getItem(KEY_REGION) || 'ap-shanghai';
 if (savedEnv) {
   $('env-input').value = savedEnv;
-  connectCloud(savedEnv);
+  $('env-access').value = savedAccess;
+  $('env-region').value = savedRegion;
+  if (savedAccess) connectCloud(savedEnv);
+  else setAIStatus('本地生成脑（离线可用）', 'off');
 } else {
   setAIStatus('本地生成脑（离线可用）', 'off');
 }

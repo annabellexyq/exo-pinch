@@ -89,7 +89,7 @@ html, body {
 .bar {
   position: relative;
   width: 210px;
-  height: 11px;
+  height: 13px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--gold-soft);
   overflow: hidden;
@@ -108,16 +108,24 @@ html, body {
   width: 100%;
   transform-origin: left;
   transition: transform 0.14s linear;
+  z-index: 1;
 }
 .fill.energy { background: linear-gradient(90deg, #6b4bd6, #e3c07a); }
 .fill.cargo { background: linear-gradient(90deg, #7ef0d0, #b39cff); }
 .bar span {
   position: absolute;
-  right: 7px; top: -3px;
-  font-size: 10px;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
   font-family: ui-monospace, monospace;
   color: var(--ink);
-  text-shadow: 0 0 6px #000;
+  z-index: 3;
+  text-shadow: 0 0 4px #000, 0 0 8px #000;
+  padding: 1px 5px;
+  background: rgba(6, 4, 13, 0.72);
+  border-radius: 2px;
+  line-height: 1;
 }
 
 #timer {
@@ -437,9 +445,14 @@ button.primary {
 }
 .ai-dot.off { background: #4a4358; box-shadow: none; }
 .ai-dot.warn { background: var(--blood); box-shadow: 0 0 14px var(--blood); }
-#env-input {
-  flex: 1;
-  min-width: 180px;
+.ai-row.inputs {
+  padding-top: 0;
+  border-top: 0;
+  margin-top: -4px;
+}
+.ai-row.inputs input {
+  flex: 1 1 0;
+  min-width: 120px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--gold-faint);
   border-radius: 2px;
@@ -448,7 +461,8 @@ button.primary {
   font-size: 12px;
   font-family: ui-monospace, monospace;
 }
-#env-input:focus { outline: none; border-color: var(--gold-soft); }
+.ai-row.inputs input:focus { outline: none; border-color: var(--gold-soft); }
+.ai-row.inputs input[type="password"] { letter-spacing: 1px; }
 
 /* AI 生成的外泌体原画（去背后用 screen 融入暗色卡片） */
 .hero {

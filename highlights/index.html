@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>囊泡漂流 EXO-PINCH · 游戏亮点</title>
+<style>
+:root {
+  --ink: #f0e4cf;
+  --gold: #e3c07a;
+  --gold-soft: rgba(227,192,122,0.32);
+  --gold-faint: rgba(227,192,122,0.12);
+  --violet: #b39cff;
+  --aqua: #7ef0d0;
+  --blood: #d2607a;
+  --bg: #06040d;
+  --panel: rgba(17,11,30,0.9);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
+  overflow-x: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(60,40,120,0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 30%, rgba(120,40,80,0.18) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 90%, rgba(40,80,120,0.2) 0%, transparent 50%),
+    linear-gradient(180deg, #06040d 0%, #0a0712 50%, #06040d 100%);
+  min-height: 100vh;
+}
+
+/* 星空背景 */
+.stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(200,220,255,0.6);
+  animation: twinkle 3s ease-in-out infinite;
+}
+@keyframes twinkle { 0%,100% { opacity: 0.15; } 50% { opacity: 0.55; } }
+
+/* 导航 */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 30px;
+  background: rgba(6,4,13,0.82);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--gold-faint);
+  z-index: 100;
+}
+.nav-brand {
+  font-size: 18px;
+  letter-spacing: 6px;
+  color: var(--gold);
+  text-shadow: 0 0 18px rgba(227,192,122,0.4);
+}
+.nav-brand em { font-style: normal; font-size: 11px; letter-spacing: 3px; color: rgba(227,192,122,0.55); margin-left: 8px; }
+.nav-links { display: flex; gap: 22px; }
+.nav-links a {
+  color: rgba(240,228,207,0.65);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 3px;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--gold); }
+
+/* Hero */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 1;
+  padding: 60px 20px;
+}
+.hero-tag {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: rgba(227,192,122,0.65);
+  font-family: ui-monospace, monospace;
+  margin-bottom: 28px;
+}
+.hero-tag span { padding: 5px 14px; border: 1px solid var(--gold-soft); border-radius: 2px; }
+.hero h1 {
+  font-size: clamp(42px, 7vw, 80px);
+  font-weight: 500;
+  letter-spacing: 10px;
+  background: linear-gradient(180deg, #fff4da, var(--gold) 50%, #9a7333);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 14px;
+}
+.hero h1 em {
+  font-style: normal;
+  font-size: clamp(14px, 2vw, 22px);
+  letter-spacing: 6px;
+  color: rgba(179,156,255,0.8);
+  -webkit-text-fill-color: rgba(179,156,255,0.8);
+  vertical-align: middle;
+  margin-left: 14px;
+}
+.hero-sub {
+  font-size: 17px;
+  line-height: 1.9;
+  color: rgba(240,228,207,0.75);
+  max-width: 720px;
+  margin-bottom: 36px;
+  text-align: center;
+}
+.hero-sub b { color: var(--gold); }
+.hero-cta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.btn-primary {
+  display: inline-block;
+  padding: 14px 36px;
+  background: linear-gradient(120deg, var(--gold), var(--violet));
+  color: #17102a;
+  border: none;
+  border-radius: 2px;
+  font-size: 15px;
+  letter-spacing: 4px;
+  font-weight: 500;
+  font-family: inherit;
+  text-decoration: none;
+  transition: 0.2s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(227,192,122,0.3); }
+.btn-ghost {
+  display: inline-block;
+  padding: 14px 30px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--gold-soft);
+  border-radius: 2px;
+  font-size: 14px;
+  letter-spacing: 3px;
+  font-family: inherit;
+  text-decoration: none;
+  transition: 0.2s;
+}
+.btn-ghost:hover { border-color: var(--gold); box-shadow: 0 0 24px rgba(227,192,122,0.18); }
+
+/* 旋转法阵装饰 */
+.sigil-deco {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 520px; height: 520px;
+  margin: -260px 0 0 -260px;
+  border-radius: 50%;
+  border: 1px solid var(--gold-faint);
+  background: repeating-conic-gradient(from 0deg, rgba(227,192,122,0.08) 0deg 1deg, transparent 1deg 15deg);
+  animation: spin 120s linear infinite;
+  pointer-events: none;
+  opacity: 0.6;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 章节标题 */
+.section {
+  position: relative;
+  z-index: 1;
+  padding: 80px 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.section-title {
+  text-align: center;
+  margin-bottom: 50px;
+}
+.section-title h2 {
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 500;
+  letter-spacing: 8px;
+  color: var(--gold);
+  text-shadow: 0 0 22px rgba(227,192,122,0.3);
+}
+.section-title h2 em {
+  font-style: normal;
+  font-size: 13px;
+  letter-spacing: 5px;
+  color: rgba(179,156,255,0.7);
+  display: block;
+  margin-top: 6px;
+}
+.section-title::before, .section-title::after {
+  content: '✦';
+  font-size: 12px;
+  color: var(--gold);
+  display: block;
+  text-align: center;
+  opacity: 0.6;
+}
+.section-title::before { margin-bottom: 12px; }
+.section-title::after { margin-top: 8px; }
+
+/* 亮点卡片 */
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+.hl-card {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--gold-soft);
+  border-radius: 3px;
+  padding: 30px 28px;
+  transition: 0.3s;
+  overflow: hidden;
+}
+.hl-card::before {
+  content: '';
+  position: absolute; inset: 6px;
+  border: 1px solid rgba(227,192,122,0.10);
+  pointer-events: none;
+}
+.hl-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 30px rgba(227,192,122,0.1);
+  transform: translateY(-3px);
+}
+.hl-icon {
+  font-size: 36px;
+  margin-bottom: 16px;
+  display: block;
+}
+.hl-card h3 {
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+.hl-card h3 em {
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: rgba(179,156,255,0.7);
+  display: block;
+  margin-top: 4px;
+}
+.hl-card p {
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: rgba(240,228,207,0.72);
+}
+.hl-card .tags {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px;
+}
+.hl-card .tags span {
+  font-size: 10px; letter-spacing: 1px;
+  padding: 3px 9px;
+  border: 1px solid rgba(179,156,255,0.3);
+  color: var(--violet);
+  background: rgba(179,156,255,0.07);
+}
+
+/* 关卡列表 */
+.levels-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+.lv-card {
+  background: var(--panel);
+  border: 1px solid var(--gold-faint);
+  border-left: 3px solid;
+  border-radius: 2px;
+  padding: 22px 24px;
+  transition: 0.25s;
+  position: relative;
+}
+.lv-card:hover { border-color: var(--gold-soft); transform: translateX(4px); }
+.lv-num {
+  position: absolute;
+  top: 14px; right: 18px;
+  font-size: 36px;
+  font-family: ui-monospace, monospace;
+  color: rgba(227,192,122,0.18);
+  font-weight: 700;
+}
+.lv-card h4 {
+  font-size: 16px;
+  letter-spacing: 4px;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+.lv-card h4 em {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(179,156,255,0.6);
+  margin-left: 8px;
+}
+.lv-card p {
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: rgba(240,228,207,0.65);
+  margin-top: 8px;
+}
+.lv-mech {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px;
+}
+.lv-mech span {
+  font-size: 9.5px; letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 2px;
+  background: rgba(227,192,122,0.08);
+  color: rgba(227,192,122,0.7);
+}
+
+/* 玩法机制 */
+.mech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+.mech-item {
+  background: rgba(17,11,30,0.6);
+  border: 1px solid var(--gold-faint);
+  border-radius: 3px;
+  padding: 24px;
+  text-align: center;
+  transition: 0.25s;
+}
+.mech-item:hover { border-color: var(--gold-soft); background: rgba(17,11,30,0.85); }
+.mech-emoji { font-size: 32px; margin-bottom: 12px; }
+.mech-item h4 {
+  font-size: 15px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.mech-item p {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: rgba(240,228,207,0.62);
+}
+
+/* 图鉴 */
+.bestiary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+.beast-card {
+  background: var(--panel);
+  border: 1px solid var(--gold-faint);
+  border-radius: 3px;
+  padding: 20px;
+  text-align: center;
+  transition: 0.25s;
+}
+.beast-card:hover { border-color: var(--gold-soft); transform: translateY(-2px); }
+.beast-emoji { font-size: 28px; margin-bottom: 8px; }
+.beast-card h5 {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+.beast-card em {
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: rgba(179,156,255,0.6);
+  display: block;
+  margin-bottom: 8px;
+}
+.beast-card p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: rgba(240,228,207,0.55);
+}
+
+/* 数据面板 */
+.stats-panel {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.stat-box {
+  text-align: center;
+  padding: 24px 30px;
+  background: var(--panel);
+  border: 1px solid var(--gold-soft);
+  border-radius: 3px;
+}
+.stat-box b {
+  display: block;
+  font-size: 38px;
+  font-family: ui-monospace, monospace;
+  color: var(--gold);
+  text-shadow: 0 0 22px rgba(227,192,122,0.35);
+}
+.stat-box small {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: rgba(240,228,207,0.55);
+  margin-top: 6px;
+  display: block;
+}
+
+/* 页脚 */
+.footer {
+  text-align: center;
+  padding: 40px 20px;
+  border-top: 1px solid var(--gold-faint);
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: rgba(227,192,122,0.45);
+}
+.footer b { color: var(--gold); }
+.footer a { color: var(--aqua); text-decoration: none; }
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .nav { padding: 10px 16px; }
+  .nav-links { display: none; }
+  .section { padding: 50px 16px; }
+  .highlights-grid { grid-template-columns: 1fr; }
+  .stats-panel { gap: 16px; max-width: 100%; }
+  .stat-box { padding: 18px 10px; }
+  .stat-box b { font-size: 30px; }
+  .stat-box small { font-size: 10px; letter-spacing: 2px; }
+}
+</style>
+</head>
+<body>
+
+<!-- 星空 -->
+<div class="stars" id="stars"></div>
+
+<!-- 导航 -->
+<nav class="nav">
+  <div class="nav-brand">囊泡漂流<em>EXO-PINCH</em></div>
+  <div class="nav-links">
+    <a href="#highlights">亮点</a>
+    <a href="#levels">九重门</a>
+    <a href="#mechanics">玩法</a>
+    <a href="#bestiary">图鉴</a>
+    <a href="https://ai-native-d7gjgsyyefdea561d-1302042144.tcloudbaseapp.com/exo-pinch/" target="_blank">开始游戏</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="sigil-deco"></div>
+  <div class="hero-tag">
+    <span>AI 生成关卡</span>
+    <span>物理弹射解谜</span>
+    <span>离线本地脑</span>
+  </div>
+  <h1>囊泡漂流<em>EXO-PINCH</em></h1>
+  <p class="hero-sub">
+    你是一枚被放逐的<b>囊泡</b>。<br/>以引弓之法投身虚空，撞入比自身大百倍的活膜，缓缓渗入；<br/>于巨人国的脏腑之间弹跃、排队装载密文，再穿门而出。<br/><b>九重门，皆由 AI 于你眼前生成。</b>
+  </p>
+  <div class="hero-cta">
+    <a class="btn-primary" href="https://ai-native-d7gjgsyyefdea561d-1302042144.tcloudbaseapp.com/exo-pinch/" target="_blank">开启第一重门</a>
+    <a class="btn-ghost" href="#highlights">了解更多</a>
+  </div>
+</section>
+
+<!-- 亮点 -->
+<section class="section" id="highlights">
+  <div class="section-title">
+    <h2>游戏亮点<em>HIGHLIGHTS</em></h2>
+  </div>
+  <div class="highlights-grid">
+
+    <div class="hl-card" style="border-left-color: #b39cff;">
+      <span class="hl-icon">🧬</span>
+      <h3>AI 实时生成关卡<em>AI-GENERATED LEVELS</em></h3>
+      <p>九重门不是手写常量。<br/>每一关的地图、物理参数、膜体结构、密文分布，皆由 AI 大脑按蓝图 + 种子实时生成——同一关卡每次重铸都是全新体验。<br/>本地生成脑离线可用；在菜单填入 CloudBase 环境 ID、publishable accessKey 与地域（需真实登录）即可接通云脑，由大模型生成关卡与台词，未接通时自动降级。</p>
+      <div class="tags"><span>本地生成脑</span><span>云脑可选</span><span>种子随机</span><span>自动降级</span></div>
+    </div>
+
+    <div class="hl-card" style="border-left-color: #7ef0d0;">
+      <span class="hl-icon">🏹</span>
+      <h3>弹弓式物理弹射<em>SLINGSHOT PHYSICS</em></h3>
+      <p>按住画面向反方向牵引——如张弓——松手弹射。<br/>引得越满，去得越远。<br/>囊泡在组织液中受黏滞、湍流、重力影响，<br/>每一次弹射都是一道不同的抛物线。<br/>瞄准时有实时预测线辅助。</p>
+      <div class="tags"><span>蓄力弹射</span><span>流体力学</span><span>预测线</span><span>以太消耗</span></div>
+    </div>
+
+    <div class="hl-card" style="border-left-color: #e3c07a;">
+      <span class="hl-icon">🫧</span>
+      <h3>活膜渗透机制<em>MEMBRANE PENETRATION</em></h3>
+      <p>细胞膜是活的——磷脂双分子层在你面前呼吸起伏。撞膜太猛必被弹开，唯有减速至灵环转青方可挤入。渗透时囊泡挤压变形，金色符文环浮现，按住可加速穿膜。糖萼、受体之序、双膜之锁——九种膜体机制层层递进。</p>
+      <div class="tags"><span>速度阈值</span><span>挤压形变</span><span>糖萼黏滞</span><span>受体之序</span><span>双膜之锁</span></div>
+    </div>
+
+    <div class="hl-card" style="border-left-color: #d2607a;">
+      <span class="hl-icon">⚔️</span>
+      <h3>免疫系统的猎杀<em>IMMUNE PURSUIT</em></h3>
+      <p>从第 4 关起，免疫系统开始追杀你。<br/>巨噬细胞伸出伪足缓慢巡游；NK 细胞蓄力冲刺；尖刺病毒锁定后夺走密文；胶囊杆菌释放毒素云。<br/>第 9 关免疫突触中，巨噬、NK、中性粒细胞诱捕网全员出动——<br/>这是一场微观战争。</p>
+      <div class="tags"><span>巨噬体</span><span>NK 杀手</span><span>尖刺病毒</span><span>诱捕网</span><span>杆菌毒素</span></div>
+    </div>
+
+    <div class="hl-card" style="border-left-color: #ff9fd8;">
+      <span class="hl-icon">📜</span>
+      <h3>密文排队与信息分拣<em>CARGO QUEUE</em></h3>
+      <p>密文不是捡了就行。高尔基体的分拣站要求按 1-2-3 顺序排队装载，插队则整批作废。密文有四种类型：miRNA、mRNA、蛋白、脂质——各有颜色。<br/>密文有时限，逾期即散佚。<br/>你必须规划路线、控制节奏。</p>
+      <div class="tags"><span>顺序装载</span><span>四类密文</span><span>时限降解</span><span>容量管理</span></div>
+    </div>
+
+    <div class="hl-card" style="border-left-color: #8fa0ff;">
+      <span class="hl-icon">🎨</span>
+      <h3>神秘学炼金术视觉<em>MYSTIC ALCHEMY</em></h3>
+      <p>全画面采用羊皮月白 × 黄铜金 × 灵性紫的炼金术色系。HUD 是法阵，关卡过场是塔罗牌，渗透时浮现金色卢恩符文环。<br/>每关换一套微环境配色——从组织液的深紫到炎症灶的暗红，再到免疫突触的青翠——视觉叙事与难度同步升级。</p>
+      <div class="tags"><span>炼金术色系</span><span>卢恩符文</span><span>九套配色</span><span>法阵 HUD</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- 九重门 -->
+<section class="section" id="levels">
+  <div class="section-title">
+    <h2>九重门<em>NINE GATES</em></h2>
+  </div>
+  <div class="levels-table">
+
+    <div class="lv-card" style="border-left-color: #b9a6ff;">
+      <div class="lv-num">1</div>
+      <h4>离巢<em>BUDDING</em></h4>
+      <p>第一次弹射。<br/>外泌体从母体膜上脱落，在开阔组织液里收集 miRNA，找到膜上最软的一处钻进去。<br/>教学关，无特殊机制。</p>
+      <div class="lv-mech"><span>难度 0%</span></div>
+    </div>
+
+    <div class="lv-card" style="border-left-color: #ff9fd8;">
+      <div class="lv-num">2</div>
+      <h4>糖萼<em>GLYCOCALYX</em></h4>
+      <p>膜外裹着厚厚的糖萼绒毛，会把高速冲来的囊泡弹开。<br/>必须轻推慢蹭，找到绒毛稀疏的缺口。</p>
+      <div class="lv-mech"><span>糖萼黏滞</span><span>难度 14%</span></div>
+    </div>
+
+    <div class="lv-card" style="border-left-color: #e8c07a;">
+      <div class="lv-num">3</div>
+      <h4>受体之门<em>RECEPTOR-GATE</em></h4>
+      <p>膜上分布着受体，只有按亮起的顺序从对应受体进入，膜才会内陷包裹你。<br/>乱序者必被弹出。</p>
+      <div class="lv-mech"><span>受体之序 ×2</span><span>难度 26%</span></div>
+    </div>
+
+    <div class="lv-card" style="border-left-color: #ff9a6b;">
+      <div class="lv-num">4</div>
+      <h4>巨人之胃<em>GIANT'S-LAIR</em></h4>
+      <p>进入细胞后才发现自己到了巨人国：线粒体像山一样。<br/>第一只巡逻的巨噬细胞也在此现身。密文紧急送达。</p>
+      <div class="lv-mech"><span>脏腑林立</span><span>急递</span><span>巨噬体</span><span>难度 38%</span></div>
+    </div>
+
+    <div class="lv-card" style="border-left-color: #dfe08a;">
+      <div class="lv-num">5</div>
+      <h4>信息排队<em>CARGO-QUEUE</em></h4>
+      <p>高尔基体的分拣站。<br/>密文必须按 1-2-3 排队装载，顺序错了整批作废。<br/>受体之序也在此出现。</p>
+      <div class="lv-mech"><span>密文排队 ×3</span><span>受体之序</span><span>巨噬体</span><span>难度 50%</span></div>
+    </div>
+
+    <div class="lv-card" style="border-left-color: #c98f9a;">
+      <div class="lv-num">6</div>
+      <h4>能量枯竭<em>ATP-DROUGHT</em></h4>
+      <p>缺血灶。以太几乎耗尽，每一次弹射都在烧命；<br/>巨噬细胞会抢走你路过的 ATP。省着些。</p>
+      <div class="lv-mech"><span>以太枯竭</span><span>密文排队 ×2</span><span>巨噬体</span><span>难度 62%</span></div>
+    </div>
+
+    <div class="lv-card" style="border-left-color: #ff7a86;">
+      <div class="lv-num">7</div>
+      <h4>核周风暴<em>PERINUCLEAR-STORM</em></h4>
+      <p>炎症灶。细胞质在咆哮，动力蛋白的旋臂横扫，NK 细胞锁定你并冲刺。<br/>密文必须紧急送达。</p>
+      <div class="lv-mech"><span>巡游之厄 ×2</span><span>急递</span><span>排队 ×2</span><span>NK 细胞</span><span>难度 74%</span></div>
+    </div>
+
+    <div class="lv-card" style="border-left-color: #8fa0ff;">
+      <div class="lv-num">8</div>
+      <h4>双膜迷宫<em>DOUBLE-MEMBRANE</em></h4>
+      <p>核域。核膜是第二道门：进核、装载、出核、再出细胞，两次渗透。<br/>免疫级别 4：病毒来袭。</p>
+      <div class="lv-mech"><span>双膜之锁</span><span>排队 ×3</span><span>受体之序 ×2</span><span>病毒</span><span>难度 86%</span></div>
+    </div>
+
+    <div class="lv-card" style="border-left-color: #7ef0d0;">
+      <div class="lv-num">9</div>
+      <h4>分泌终章<em>SECRETION-FINALE</em></h4>
+      <p>免疫突触。<br/>巨噬、NK、中性粒细胞胞外诱捕网全员出动，穿过连环之门把密文送到靶细胞。<br/>全部机制叠加。</p>
+      <div class="lv-mech"><span>连环之门 ×2</span><span>双膜</span><span>排队 ×3</span><span>厄 ×2</span><span>受体 ×2</span><span>枯竭</span><span>细菌滋生</span><span>难度 100%</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- 玩法机制 -->
+<section class="section" id="mechanics">
+  <div class="section-title">
+    <h2>核心玩法<em>CORE MECHANICS</em></h2>
+  </div>
+  <div class="mech-grid">
+
+    <div class="mech-item">
+      <div class="mech-emoji">🎯</div>
+      <h4>引弓蓄力</h4>
+      <p>按住画面，向反方向拖拽。<br/>拖得越远，弹射力度越大，但以太消耗也越多。<br/>松手即弹射。</p>
+    </div>
+
+    <div class="mech-item">
+      <div class="mech-emoji">🌀</div>
+      <h4>速度渗透</h4>
+      <p>撞膜时速度必须低于阈值（灵环转青）。<br/>太快被弹开并损能量，太慢挤不进去。<br/>按住可加速穿膜。</p>
+    </div>
+
+    <div class="mech-item">
+      <div class="mech-emoji">📦</div>
+      <h4>密文装载</h4>
+      <p>收集散布的密文信号包。<br/>排队关需按序到密文台依次录入。<br/>密文有容量上限，超载无法拾取。</p>
+    </div>
+
+    <div class="mech-item">
+      <div class="mech-emoji">⚡</div>
+      <h4>以太管理</h4>
+      <p>以太是生命线。<br/>弹射、穿膜、被撞都在烧以太。捡 ATP 补充。<br/>静止几乎不耗能——鼓励停下来瞄准。</p>
+    </div>
+
+    <div class="mech-item">
+      <div class="mech-emoji">⏱️</div>
+      <h4>时之窗</h4>
+      <p>每关有限时。时间归零则密文散佚、闯关失败。<br/>最后 15 秒计时器变红，节奏骤紧。</p>
+    </div>
+
+    <div class="mech-item">
+      <div class="mech-emoji">🔄</div>
+      <h4>重开与换图</h4>
+      <p>R 键重开同一张图；N 键让 AI 重新生成本关。<br/>重掷星盘换掉整趟旅程种子，影响后续每关。</p>
+    </div>
+
+    <div class="mech-item">
+      <div class="mech-emoji">🧭</div>
+      <h4>相机自适应</h4>
+      <p>速度越快镜头越远，停下来镜头拉近。<br/>瞄准时再拉近一档。<br/>穿入细胞后镜头微缩，方便导航。</p>
+    </div>
+
+    <div class="mech-item">
+      <div class="mech-emoji">🎬</div>
+      <h4>AI 导演</h4>
+      <p>根据你的表现实时吐槽与提示。<br/>「太急！膜将汝弹回」「以太将枯，速寻发光之粒」<br/>——连云脑可生成更有创意的台词。</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- 图鉴 -->
+<section class="section" id="bestiary">
+  <div class="section-title">
+    <h2>微物图鉴<em>BESTIARY</em></h2>
+  </div>
+  <div class="bestiary">
+
+    <div class="beast-card" style="border-color: rgba(185,166,255,0.3);">
+      <div class="beast-emoji">🔵</div>
+      <h5>常态囊泡</h5><em>EXO-NORMAL</em>
+      <p>半透明软糖囊泡，<br/>表面布满四跨膜蛋白触须。<br/>主角常态。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(126,240,208,0.3);">
+      <div class="beast-emoji">🟢</div>
+      <h5>挤膜之形</h5><em>EXO-SQUEEZE</em>
+      <p>四瓣挤压形变，<br/>被活膜卡住的扁囊泡。渗透中。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(255,180,107,0.3);">
+      <div class="beast-emoji">🟡</div>
+      <h5>载文囊泡</h5><em>EXO-CARGO</em>
+      <p>内部可见 DNA 双螺旋与蛋白颗粒。<br/>已携带密文。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(210,96,122,0.3);">
+      <div class="beast-emoji">🔴</div>
+      <h5>枯竭之形</h5><em>EXO-LOW</em>
+      <p>失色开裂、裂纹中火星外泄。<br/>以太告急。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(255,140,120,0.3);">
+      <div class="beast-emoji">🟠</div>
+      <h5>线粒巨物</h5><em>MITO</em>
+      <p>金色折叠嵴的线粒体，<br/>如山丘般隆起。弹射台。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(220,190,140,0.3);">
+      <div class="beast-emoji">🟤</div>
+      <h5>内质潴泡</h5><em>ER</em>
+      <p>金色层叠起伏的膜潴泡。<br/>巨人国的内质网迷宫。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(255,220,150,0.3);">
+      <div class="beast-emoji">🟡</div>
+      <h5>高尔基叠</h5><em>GOLGI</em>
+      <p>层层叠压的扁囊结构。<br/>分拣站所在地。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(110,220,180,0.3);">
+      <div class="beast-emoji">🟢</div>
+      <h5>溶酶囊泡</h5><em>VESICLE</em>
+      <p>内部小泡密布的绿色囊泡。<br/>溶酶体 / 囊泡。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(143,160,255,0.3);">
+      <div class="beast-emoji">🔵</div>
+      <h5>双膜之核</h5><em>NUCLEUS</em>
+      <p>双层核膜、环状核孔与核内 DNA。<br/>第 8 关第二道门。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(255,230,128,0.3);">
+      <div class="beast-emoji">⚡</div>
+      <h5>以太颗粒</h5><em>ATP</em>
+      <p>发光的三磷酸分子链。<br/>补充以太能量。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(179,156,255,0.3);">
+      <div class="beast-emoji">✨</div>
+      <h5>信号本体</h5><em>SIGNAL</em>
+      <p>光核 + 发夹环，缓缓起伏。<br/>密文本体，共四色。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(255,90,140,0.3);">
+      <div class="beast-emoji">🟣</div>
+      <h5>游走巨噬体</h5><em>MACROPHAGE</em>
+      <p>伸出伪足缓慢巡游的阿米巴。<br/>巡逻弹开、吞以太。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(255,90,120,0.3);">
+      <div class="beast-emoji">🔴</div>
+      <h5>杀手细胞</h5><em>NK-CELL</em>
+      <p>带棱核的尖刺球体。<br/>蓄力冲刺，一击 16 点伤害。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(255,80,140,0.3);">
+      <div class="beast-emoji">🦠</div>
+      <h5>尖刺病毒</h5><em>VIRUS</em>
+      <p>密布尖刺的小球，更小更快。<br/>锁定冲刺，夺走密文。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(80,200,120,0.3);">
+      <div class="beast-emoji">🟩</div>
+      <h5>胶囊杆菌</h5><em>BACTERIUM</em>
+      <p>链状相连的发光杆菌。<br/>体表毒素云持续伤血。</p>
+    </div>
+
+    <div class="beast-card" style="border-color: rgba(150,180,220,0.3);">
+      <div class="beast-emoji">🕸️</div>
+      <h5>诱捕之网</h5><em>NET</em>
+      <p>网状交错的胞外诱捕网。<br/>粘滞减速，持续掉以太。</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- 数据面板 -->
+<section class="section">
+  <div class="section-title">
+    <h2>游戏数据<em>BY THE NUMBERS</em></h2>
+  </div>
+  <div class="stats-panel">
+    <div class="stat-box"><b>9</b><small>重 门</small></div>
+    <div class="stat-box"><b>16</b><small>生物图鉴</small></div>
+    <div class="stat-box"><b>9</b><small>关 卡 机 制</small></div>
+    <div class="stat-box"><b>4</b><small>密 文 类 型</small></div>
+    <div class="stat-box"><b>∞</b><small>AI 生 成 组 合</small></div>
+    <div class="stat-box"><b>0</b><small>需 联 网</small></div>
+  </div>
+</section>
+
+<!-- 页脚 -->
+<div class="footer">
+  <p>囊泡漂流 <b>EXO-PINCH</b> · 九关物理闯关 · 制作人：<b>AnnabelleXu</b></p>
+  <p style="margin-top:8px;">引弓蓄力弹射 · 撞膜过猛必被弹开<br/>密文有时限，逾期即散佚</p>
+  <p style="margin-top:8px;"><a href="https://ai-native-d7gjgsyyefdea561d-1302042144.tcloudbaseapp.com/exo-pinch/" target="_blank">▸ 开始游戏</a></p>
+</div>
+
+<script>
+// 星空
+const starsContainer = document.getElementById('stars');
+for (let i = 0; i < 120; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const size = Math.random() * 2.5 + 0.5;
+  s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;width:${size}px;height:${size}px;animation-delay:${Math.random()*3}s;`;
+  starsContainer.appendChild(s);
+}
+</script>
+
+</body>
+</html>
