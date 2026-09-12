@@ -1,8 +1,8 @@
 // 入口：装配游戏、AI 大脑、HUD 与各类界面
 
-import { Game } from './game/game.js?v=15';
-import { Renderer } from './game/render.js?v=15';
-import { CloudBrain } from './ai/brains.js?v=15';
+import { Game } from './game/game.js?v=16';
+import { Renderer } from './game/render.js?v=16';
+import { CloudBrain } from './ai/brains.js?v=16';
 import { LEVEL_BLUEPRINTS } from './ai/genome.js';
 
 const $ = (id) => document.getElementById(id);
@@ -52,13 +52,31 @@ function ensureCloudBrain(envId) {
   return cloudBrain;
 }
 
-function adoptBrain(b) {
-  brain = b;
-  game.brain = b;
-  game.director.cloud = b;
+/** 只持久化配置（即使模型暂不可用，也保留 env/key/region） */
+function persistConfig(b) {
   localStorage.setItem(KEY_ENV, b.env);
   localStorage.setItem(KEY_ACCESS, b.accessKey);
   localStorage.setItem(KEY_REGION, b.region);
+}
+
+/** 登录通过后再真实打一次模型：通了才算接通，否则退回本地脑并如实提示 */
+async function activate(b) {
+  persistConfig(b);
+  showAuthRow(false);
+  setAIStatus('正在验证模型…', 'warn');
+  const probe = await b.probe();
+  if (probe.ok) {
+    brain = b;
+    game.brain = b;
+    game.director.cloud = b;
+    setAIStatus(`云脑已连接 · ${b.modelId}`);
+    return true;
+  }
+  brain = null;
+  game.brain = null;
+  game.director.cloud = null;
+  setAIStatus(`${probe.reason} · 已降级本地脑`, 'off');
+  return false;
 }
 
 async function connectCloud(envId) {
@@ -66,9 +84,7 @@ async function connectCloud(envId) {
   if (!b) return;
   const ok = await b.init();
   if (ok) {
-    adoptBrain(b);
-    setAIStatus(`云脑已连接 · ${b.modelId}`);
-    showAuthRow(false);
+    await activate(b);
   } else {
     setAIStatus(`${b.reason || '云脑不可用'} · 已降级本地脑`, 'off');
     showAuthRow(/登录/.test(b.reason || ''));
@@ -85,10 +101,8 @@ async function loginCloud() {
   if (!b) { showAuthRow(true); return; }
   const res = await b.login(user, pass);
   if (!res.ok) { setAIStatus(`登录失败：${res.reason}`, 'off'); return; }
-  adoptBrain(b);
   $('auth-pass').value = '';
-  setAIStatus(`已登录 · 云脑已连接 · ${b.modelId}`);
-  showAuthRow(false);
+  await activate(b);
 }
 
 /* ------------------------------ 全程战绩 ------------------------------ */

@@ -221,6 +221,25 @@ export class CloudBrain {
     }
   }
 
+  /** 轻量探针：真正打一次模型，把「已登录」和「模型可用」区分开 */
+  async probe() {
+    if (!this.app) return { ok: false, reason: '云脑未初始化' };
+    try {
+      const model = this.app.ai().createModel(this.group);
+      await model.generateText({
+        model: this.modelId,
+        temperature: 0,
+        messages: [{ role: 'user', content: 'ping' }],
+      });
+      return { ok: true };
+    } catch (e) {
+      const reason = e?.message || String(e);
+      this.reason = `模型不可用：${reason}`;
+      this.onStatus(this.reason);
+      return { ok: false, reason };
+    }
+  }
+
   async generateLevel(blueprint, seed, profile = {}) {
     if (!this.ready) return null;
     const sys = `你是细胞生物学游戏关卡设计师。只输出 JSON。
