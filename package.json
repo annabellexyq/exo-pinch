@@ -1,0 +1,11 @@
+{
+  "name": "exo-pinch",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "囊泡漂流 EXO-PINCH · 九关 AI 原生物理闯关（外泌体穿膜）",
+  "scripts": {
+    "start": "python3 -m http.server 5173",
+    "serve": "npx --yes serve -l 5173 ."
+  }
+}

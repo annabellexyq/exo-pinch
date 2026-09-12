@@ -1,0 +1,101 @@
+/* 图例介绍：星图中的形象对照表 */
+
+.legend {
+  margin-top: 14px;
+  padding: 12px 14px 8px;
+  border: 1px solid var(--gold-faint);
+  border-radius: 12px;
+  background: rgba(8, 5, 16, 0.72);
+  text-align: left;
+}
+
+.legend-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.legend-head b { color: var(--gold); letter-spacing: 0.14em; }
+.legend-head em {
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  color: var(--gold-soft);
+}
+.legend-head button {
+  margin-left: auto;
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 12px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--gold-soft);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.legend-head button:hover { background: var(--gold-faint); }
+
+.legend-scroll { max-height: 40vh; overflow-y: auto; }
+
+#legend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+#legend-table th {
+  position: sticky;
+  top: 0;
+  padding: 6px 8px;
+  text-align: left;
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  background: rgba(8, 5, 16, 0.96);
+  border-bottom: 1px solid var(--gold-faint);
+}
+#legend-table td {
+  padding: 6px 8px;
+  vertical-align: middle;
+  border-bottom: 1px dashed rgba(227, 192, 122, 0.08);
+  color: rgba(240, 228, 207, 0.82);
+}
+#legend-table tr:last-child td { border-bottom: 0; }
+#legend-table b { color: var(--ink); font-weight: 400; }
+#legend-table small {
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: var(--gold-soft);
+}
+#legend-table td.use { color: var(--violet); white-space: nowrap; }
+#legend-table img {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  background: radial-gradient(circle at 50% 45%, rgba(120, 90, 200, 0.22), transparent 70%);
+  filter: drop-shadow(0 0 10px rgba(227, 192, 122, 0.28));
+}
+
+@media (max-width: 640px) {
+  .legend-scroll { max-height: 34vh; }
+  #legend-table { font-size: 11.5px; }
+  #legend-table td.use { white-space: normal; }
+  #legend-table img { width: 36px; height: 36px; }
+}
+
+#menu { overflow-y: auto; align-items: flex-start; }
+#menu .card { margin: auto; }
+.maker { margin: 14px 0 0; padding-top: 10px; border-top: 1px dashed rgba(227,192,122,0.12); font-size: 11px; letter-spacing: 0.22em; color: rgba(227,192,122,0.62); text-align: center; }
+#btn-menu { border-color: rgba(179,156,255,0.4); color: var(--violet); }
+.score { display: flex; align-items: baseline; justify-content: center; gap: 14px; margin: 18px 0 6px; }
+.score b { font-size: 46px; font-family: ui-monospace, monospace; color: var(--gold); text-shadow: 0 0 30px rgba(227,192,122,0.5); }
+.score small { font-size: 11px; letter-spacing: 0.3em; color: var(--gold-soft); }
+#legend-table .sw { display: flex; gap: 4px; margin-top: 5px; }
+#legend-table .sw i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); }
+#clear-break { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 8px; }
+#clear-break span { white-space: nowrap; padding: 4px 6px; letter-spacing: 0; text-align: center; overflow: hidden; }
+@media (max-width: 640px) { #clear-break { grid-template-columns: 1fr 1fr; } }

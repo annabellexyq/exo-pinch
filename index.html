@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>囊泡漂流 EXO-PINCH · 九关物理闯关</title>
+  <link rel="stylesheet" href="./styles.css?v=11" />
+  <link rel="stylesheet" href="./legend.css?v=11" />
+</head>
+<body>
+  <canvas id="stage"></canvas>
+
+  <!-- 顶部 HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-col">
+      <div class="lv"><b id="lv-num">1</b><span id="lv-name">离巢</span><em id="lv-code">BUDDING</em></div>
+      <div class="meter"><label>以太</label><div class="bar"><i id="bar-energy" class="fill energy"></i><span id="energy-txt">100</span></div></div>
+      <div class="meter"><label>密文</label><div class="bar"><i id="bar-cargo" class="fill cargo"></i><span id="cargo-txt">0 / 3</span></div></div>
+    </div>
+    <div class="hud-col right">
+      <div class="clock"><label>时之窗</label><div id="timer">95.0</div></div>
+      <div id="obj">装载密文 → 穿出目标之膜</div>
+      <div id="zone" class="zone">外域</div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="director"></div>
+
+  <footer id="controls" class="hidden">
+    <span><b>引弓</b> 蓄力弹射</span>
+    <span><b>按住</b> 加速穿膜</span>
+    <span><b>R</b> 重启此门（同一张图）</span>
+    <span><b>N</b> 重铸此门（AI 换图）</span>
+  </footer>
+
+  <!-- 首次开局：怎么拽 -->
+  <div id="guide">
+    <div class="guide-box">
+      <div class="guide-demo">
+        <span class="ghost"></span>
+        <span class="hand"></span>
+        <span class="arrow">↗</span>
+      </div>
+      <p class="guide-text">按住画面 <b>→</b> 向<b>反方向</b>牵引（如张弓）<b>→</b> 松手弹射</p>
+      <p class="guide-sub">引得越满，去得越远 · 撞膜前须减速：外圈灵环转<b>青</b>方可挤入</p>
+    </div>
+  </div>
+
+  <!-- 移动端（无键盘）快捷操作 -->
+  <div id="touch-btns" class="hidden">
+    <button id="btn-restart" title="重开本关，地图不变">重开</button>
+    <button id="btn-reroll2" title="换种子重开，AI 重新生成本关">换图</button>
+    <button id="btn-menu" title="回到星图，查看进度与图例">返回星图</button>
+  </div>
+
+  <!-- 关卡过场 -->
+  <div id="intro" class="overlay hidden">
+    <div class="card">
+      <div class="tag"><span id="in-stage">LEVEL 1 / 9</span><span id="in-src">本地生成脑</span></div>
+      <h2 id="in-title">离巢 <em>BUDDING</em><img class="hero" src="./assets/exo-normal.png" alt="" /></h2>
+      <p id="in-brief" class="brief"></p>
+      <div class="grid">
+        <div><label>目标</label><p id="in-obj"></p></div>
+        <div><label>提示</label><p id="in-hint"></p></div>
+      </div>
+      <div id="in-tags" class="tags"></div>
+      <button id="in-go" class="primary">踏入此门</button>
+    </div>
+  </div>
+
+  <!-- 结算 -->
+  <div id="result" class="overlay hidden">
+    <div class="card">
+      <h2 id="res-title">传递成功</h2>
+      <p id="res-sub" class="brief"></p>
+      <div id="res-stats" class="stats"></div>
+      <div class="row">
+        <button id="res-next" class="primary">下一重门</button>
+        <button id="res-retry">重启此门</button>
+        <button id="res-menu">星图</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 九重门尽启：通关时间与总分 -->
+  <div id="clear" class="overlay hidden">
+    <div class="card">
+      <div class="tag"><span id="clear-stage">九重门尽启</span><span>ALL CLEAR</span></div>
+      <h2>囊泡归位 <em>THE END</em></h2>
+      <p id="clear-sub" class="brief"></p>
+      <div class="score"><b id="clear-score">0</b><small>总 分</small></div>
+      <div id="clear-stats" class="stats"></div>
+      <div id="clear-break" class="tags"></div>
+      <div class="row">
+        <button id="clear-menu" class="primary">返回星图</button>
+        <button id="clear-again">再走一趟</button>
+      </div>
+      <p class="tiny">一关的余以太、余时与密文皆计入总分</p>
+    </div>
+  </div>
+
+  <!-- 主菜单 -->
+  <div id="menu" class="overlay">
+    <div class="sigil"></div>
+    <div class="card wide">
+      <h1>囊泡漂流 <em>EXO-PINCH</em><img class="hero big" src="./assets/exo-normal.png" alt="" /></h1>
+      <p class="brief">
+        你是一枚被放逐的囊泡。以引弓之法投身虚空，撞入比自身大百倍的活膜，缓缓渗入；
+        于巨人国的脏腑之间弹跃、排队装载密文，再穿门而出。
+        <b>九重门，皆由 AI 于你眼前生成。</b>
+      </p>
+      <div id="level-grid" class="levels"></div>
+      <div class="ai-row">
+        <span class="ai-dot" id="ai-dot"></span>
+        <span id="ai-status">AI 大脑：本地生成脑（离线可用）</span>
+        <input id="env-input" placeholder="CloudBase 环境 ID（可选，接云脑）" />
+        <button id="env-btn">接通灵脑</button>
+      </div>
+      <div class="row">
+        <button id="btn-play" class="primary">开启第一重门</button>
+        <button id="btn-reroll" title="换掉整趟旅程的种子：影响之后载入的每一关，当前不重开">重掷星盘</button>
+        <button id="btn-legend">图例介绍</button>
+      </div>
+      <div id="legend" class="legend hidden"><div class="legend-head"><b>图例介绍</b><em>BESTIARY</em><button id="legend-close">收起</button></div><div class="legend-scroll"><table id="legend-table"></table></div></div>
+      <p class="tiny">引弓蓄力弹射 · 撞膜过猛必被弹开 · 密文有时限，逾期即散佚</p>
+      <p class="maker">制作人：AnnabelleXu</p>
+    </div>
+  </div>
+
+  <script>
+    // 兜底：即使模块脚本未就绪或被缓存，也能从游戏内返回星图
+    (function () {
+      var btn = document.getElementById('btn-menu');
+      if (!btn) return;
+      var back = function (e) {
+        if (e) e.preventDefault();
+        if (typeof window.__exoBackToMenu === 'function') { window.__exoBackToMenu(); return; }
+        var menu = document.getElementById('menu');
+        if (menu) menu.classList.remove('hidden');
+        ['hud', 'controls', 'touch-btns', 'intro', 'result'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.classList.add('hidden');
+        });
+      };
+      btn.addEventListener('click', back);
+      btn.addEventListener('pointerup', back);
+    })();
+  </script>
+  <script type="module" src="./src/legend.js?v=11"></script>
+  <script type="module" src="./src/main.js?v=11"></script>
+</body>
+</html>
