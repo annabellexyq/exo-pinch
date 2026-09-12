@@ -2,12 +2,18 @@
 
 ## 在线地址
 
-**https://ai-native-d7gjgsyyefdea561d-1302042144.tcloudbaseapp.com/exo-pinch/**
+| 平台 | 地址 |
+| --- | --- |
+| GitHub Pages（主） | `https://annabellexyq.github.io/exo-pinch/` |
+| 腾讯云 CloudBase | `https://ai-native-d7gjgsyyefdea561d-1302042144.tcloudbaseapp.com/exo-pinch/` |
 
-部署信息：腾讯云开发 CloudBase 静态托管
-- 环境 ID：`ai-native-d7gjgsyyefdea561d`（上海 ap-shanghai）
-- 托管路径：`exo-pinch/`
-- 部署命令：`npx -p @cloudbase/cli tcb hosting deploy . exo-pinch -e ai-native-d7gjgsyyefdea561d`
+- 仓库：`https://github.com/annabellexyq/exo-pinch`（`main` 分支；Pages 从该分支根目录构建，推送后 1～3 分钟生效）
+- 腾讯云托管：环境 `ai-native-d7gjgsyyefdea561d`（上海 ap-shanghai），托管路径 `exo-pinch/`
+  - ⚠️ 该环境的静态托管**根目录 `/` 已被「游医天下」占用**，本项目只放 `/exo-pinch/`，**切勿部署到根目录**（会覆盖别的项目入口）
+  - ⚠️ 环境里那个 `youyitianxia-*.webapps.tcloudbase.com` 域名是按「游医天下」的项目名注册的，**不要对外用**；本项目统一用 `tcloudbaseapp.com` 域名
+- 部署命令
+  - GitHub：`git push origin main`
+  - 腾讯云：`npx -p @cloudbase/cli tcb hosting deploy . exo-pinch -e ai-native-d7gjgsyyefdea561d`
 - 未使用云函数 / 云数据库 / 云存储：纯静态前端，AI 关卡生成在浏览器内完成（云脑可选）
 
 一颗外泌体的九次穿膜。AI 原生的物理闯关小游戏：拖拽弹射 → 撞上比自己大一百倍的膜 → 慢慢渗透 → 在巨人国的细胞器之间弹射、排队装载信息 → 再穿出去。
@@ -110,8 +116,10 @@ LEVEL_BLUEPRINTS（设计意图/机制约束）
 exo-pinch/
 ├── index.html
 ├── styles.css
+├── legend.css             图鉴 / 说明面板样式
 └── src/
     ├── main.js            入口：装配游戏 / HUD / 菜单 / 结算
+    ├── legend.js          九关图鉴 / 说明面板
     ├── core/
     │   ├── rng.js         种子随机、数学、噪声
     │   └── physics.js     粘滞介质积分、圆-圆冲量、胶囊、世界边界、轨迹预测
