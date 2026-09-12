@@ -322,6 +322,11 @@ html, body {
      不支持的浏览器会直接忽略，排版回退到现状，不会更差。 */
   text-wrap: balance;
 }
+/* 仅在窄屏生效的「强制换行」：中文可在任意两字间断行，上面那句在手机上会被拆成
+   「缓缓渗」+「入；」。标 <br class="br-m"> 只在窄屏显示，任何浏览器都不再拆词；
+   宽屏隐藏该 <br>，原有版式完全不变。 */
+br.br-m { display: none; }
+@media (max-width: 768px) { br.br-m { display: inline; } }
 .tiny {
   margin: 16px 0 0;
   font-size: 11.5px;

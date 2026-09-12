@@ -452,6 +452,11 @@ body {
   .stat-box b { font-size: 30px; }
   .stat-box small { font-size: 10px; letter-spacing: 2px; }
 }
+/* 仅在窄屏生效的「强制换行」：中文可以在任意两字之间断行，窄屏会把「缓缓渗入」
+   拆成「缓缓渗」+「入；」，留下孤字行。这里在逗号处插一个只在手机出现的 <br>，
+   任何浏览器都不会再拆词；桌面端该 <br> 隐藏，原有版式不变。 */
+br.br-m { display: none; }
+@media (max-width: 768px) { br.br-m { display: inline; } }
 </style>
 </head>
 <body>
@@ -481,7 +486,7 @@ body {
   </div>
   <h1>囊泡漂流<em>EXO-PINCH</em></h1>
   <p class="hero-sub">
-    你是一枚被放逐的<b>囊泡</b>。<br/>以引弓之法投身虚空，撞入比自身大百倍的活膜，缓缓渗入；<br/>于巨人国的脏腑之间弹跃、排队装载密文，再穿门而出。<br/><b>九重门，皆由 AI 于你眼前生成。</b>
+    你是一枚被放逐的<b>囊泡</b>。<br/>以引弓之法投身虚空，<br class="br-m"/>撞入比自身大百倍的活膜，缓缓渗入；<br/>于巨人国的脏腑之间弹跃、排队装载密文，再穿门而出。<br/><b>九重门，皆由 AI 于你眼前生成。</b>
   </p>
   <div class="hero-cta">
     <a class="btn-primary" href="https://ai-native-d7gjgsyyefdea561d-1302042144.tcloudbaseapp.com/exo-pinch/" target="_blank">开启第一重门</a>
