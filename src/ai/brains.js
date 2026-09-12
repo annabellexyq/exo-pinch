@@ -291,6 +291,120 @@ ${GENOME_SCHEMA_HINT}
 }
 
 /* ------------------------------------------------------------------ */
+/*  专属 API 脑：直调 OpenAI 兼容的内容生成接口（不依赖 CloudBase 云脑）   */
+/*  用途：为「囊泡漂流」实时生成关卡基因组（玩法规则）与场景文案。        */
+/*  留空未配置 -> 返回 null，由调用方降级本地脑，游戏永不卡死。           */
+/* ------------------------------------------------------------------ */
+
+export class ApiBrain {
+  constructor(opts = {}) {
+    // baseUrl 形如 https://api.deepseek.com/v1（不含 /chat/completions）
+    this.baseUrl = String(opts.baseUrl || '').trim().replace(/\/+$/, '');
+    this.apiKey = String(opts.apiKey || '').trim();
+    this.modelId = String(opts.modelId || '').trim() || 'deepseek-chat';
+    this.temperature = typeof opts.temperature === 'number' ? opts.temperature : 0.9;
+    this.ready = false;
+    this.reason = '';
+    this.kind = 'api-brain';
+    this.group = 'api';           // 兼容 main.js 里对 brain.group 的引用
+    this.onStatus = opts.onStatus || (() => {});
+  }
+
+  /** 地址 + Key 齐备才算「已配置」 */
+  get configured() {
+    return !!(this.baseUrl && this.apiKey);
+  }
+
+  async init() {
+    if (!this.configured) {
+      this.reason = '未配置专属 API（需填 API 地址与 Key）';
+      this.onStatus(this.reason);
+      this.ready = false;
+      return false;
+    }
+    this.ready = true;
+    this.onStatus(`专属 API 已就绪 · ${this.modelId}`);
+    return true;
+  }
+
+  /** 统一 chat 调用：OpenAI 兼容 POST /chat/completions */
+  async chat(messages, temperature) {
+    if (!this.configured) throw new Error('专属 API 未配置');
+    const res = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.modelId,
+        temperature: typeof temperature === 'number' ? temperature : this.temperature,
+        messages,
+      }),
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status} ${String(t).slice(0, 120)}`);
+    }
+    const data = await res.json();
+    return data?.choices?.[0]?.message?.content || '';
+  }
+
+  /** 探针：真打一次模型，通了才算接通 */
+  async probe() {
+    if (!this.configured) return { ok: false, reason: this.reason || '专属 API 未配置' };
+    try {
+      await this.chat([{ role: 'user', content: 'ping' }], 0);
+      this.ready = true;
+      return { ok: true };
+    } catch (e) {
+      this.reason = `专属 API 不可用：${e?.message || e}`;
+      this.onStatus(this.reason);
+      this.ready = false;
+      return { ok: false, reason: this.reason };
+    }
+  }
+
+  async generateLevel(blueprint, seed, profile = {}) {
+    if (!this.ready && !this.configured) return null;
+    const sys = `你是细胞生物学游戏关卡设计师。只输出 JSON。
+${GENOME_SCHEMA_HINT}
+关卡：第${blueprint.index}关 ${blueprint.name}（${blueprint.codename}）
+设计意图：${blueprint.intent}
+机制开关：${JSON.stringify(blueprint.mechanics)}
+难度：${blueprint.difficulty}（玩家自适应偏移 ${profile.adjust || 0}）
+种子：${seed}
+输出语言：简体中文。`;
+    try {
+      const text = (await this.chat([{ role: 'user', content: sys }], 0.9))
+        .replace(/```json?/gi, '').replace(/```/g, '').trim();
+      const json = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
+      json.source = 'api-brain';
+      return validateGenome(json, blueprint);
+    } catch (e) {
+      this.reason = `专属 API 生成失败，已降级本地脑：${e?.message || e}`;
+      this.onStatus(this.reason);
+      return null;
+    }
+  }
+
+  async directorLine(event, ctx) {
+    if (!this.configured) return null;
+    try {
+      const t = (await this.chat([{
+        role: 'user',
+        content: `你是外泌体闯关游戏的 AI 导演。玩家事件：${event}。
+上下文：${JSON.stringify(ctx)}。
+用一句不超过 18 字的中文，给出即时提示或吐槽。只输出这一句，不要引号。`,
+      }], 1)).trim().replace(/^["'“]|["'”]$/g, '');
+      return t ? t.slice(0, 40) : null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  AI 导演：本地规则生成 + 可选云端润色                                */
 /* ------------------------------------------------------------------ */
 
