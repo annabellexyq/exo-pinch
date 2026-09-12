@@ -1,8 +1,8 @@
 // 入口：装配游戏、AI 大脑、HUD 与各类界面
 
-import { Game } from './game/game.js?v=12';
-import { Renderer } from './game/render.js?v=12';
-import { CloudBrain } from './ai/brains.js?v=12';
+import { Game } from './game/game.js?v=15';
+import { Renderer } from './game/render.js?v=15';
+import { CloudBrain } from './ai/brains.js?v=15';
 import { LEVEL_BLUEPRINTS } from './ai/genome.js';
 
 const $ = (id) => document.getElementById(id);
@@ -26,6 +26,7 @@ const KEY_REGION = 'exo_pinch_region';
 const progress = { unlocked: Math.max(1, Number(localStorage.getItem(KEY_UNLOCK) || 1)) };
 
 let brain = null;
+let cloudBrain = null;
 
 function setAIStatus(text, kind = 'ok') {
   $('ai-status').textContent = `AI 大脑：${text}`;
@@ -33,24 +34,61 @@ function setAIStatus(text, kind = 'ok') {
   dot.className = 'ai-dot' + (kind === 'ok' ? '' : kind === 'warn' ? ' warn' : ' off');
 }
 
-async function connectCloud(envId) {
-  if (!envId) { setAIStatus('本地生成脑（未配置云环境）', 'off'); return; }
+/** 只在需要登录时露出用户名/密码行 */
+function showAuthRow(show) {
+  const row = $('auth-row');
+  if (row) row.classList.toggle('hidden', !show);
+}
+
+/** 依据表单/已存配置取一个 CloudBrain 实例（复用，避免重复加载 SDK） */
+function ensureCloudBrain(envId) {
   const accessKey = ($('env-access')?.value || '').trim() || localStorage.getItem(KEY_ACCESS) || '';
   const region = ($('env-region')?.value || '').trim() || localStorage.getItem(KEY_REGION) || 'ap-shanghai';
-  if (!accessKey) { setAIStatus('云脑不可用：请输入 publishable accessKey', 'off'); return; }
-  const b = new CloudBrain({ env: envId, accessKey, region, onStatus: (s) => setAIStatus(s, 'warn') });
+  if (!envId) { setAIStatus('本地生成脑（未配置云环境）', 'off'); return null; }
+  if (!accessKey) { setAIStatus('云脑不可用：请填 publishable accessKey', 'off'); return null; }
+  if (!cloudBrain || cloudBrain.env !== envId || cloudBrain.accessKey !== accessKey || cloudBrain.region !== region) {
+    cloudBrain = new CloudBrain({ env: envId, accessKey, region, onStatus: (s) => setAIStatus(s, 'warn') });
+  }
+  return cloudBrain;
+}
+
+function adoptBrain(b) {
+  brain = b;
+  game.brain = b;
+  game.director.cloud = b;
+  localStorage.setItem(KEY_ENV, b.env);
+  localStorage.setItem(KEY_ACCESS, b.accessKey);
+  localStorage.setItem(KEY_REGION, b.region);
+}
+
+async function connectCloud(envId) {
+  const b = ensureCloudBrain(envId);
+  if (!b) return;
   const ok = await b.init();
   if (ok) {
-    brain = b;
-    game.brain = b;
-    game.director.cloud = b;
-    localStorage.setItem(KEY_ENV, envId);
-    localStorage.setItem(KEY_ACCESS, accessKey);
-    localStorage.setItem(KEY_REGION, region);
+    adoptBrain(b);
     setAIStatus(`云脑已连接 · ${b.modelId}`);
+    showAuthRow(false);
   } else {
     setAIStatus(`${b.reason || '云脑不可用'} · 已降级本地脑`, 'off');
+    showAuthRow(/登录/.test(b.reason || ''));
   }
+}
+
+/** 用户名/密码登录成功后立即接通云脑 */
+async function loginCloud() {
+  const envId = (($('env-input')?.value || '').trim()) || localStorage.getItem(KEY_ENV) || '';
+  const user = ($('auth-user')?.value || '').trim();
+  const pass = $('auth-pass')?.value || '';
+  if (!user || !pass) { setAIStatus('请先填写云脑用户名与密码', 'warn'); return; }
+  const b = ensureCloudBrain(envId);
+  if (!b) { showAuthRow(true); return; }
+  const res = await b.login(user, pass);
+  if (!res.ok) { setAIStatus(`登录失败：${res.reason}`, 'off'); return; }
+  adoptBrain(b);
+  $('auth-pass').value = '';
+  setAIStatus(`已登录 · 云脑已连接 · ${b.modelId}`);
+  showAuthRow(false);
 }
 
 /* ------------------------------ 全程战绩 ------------------------------ */
@@ -268,20 +306,20 @@ $('btn-reroll').onclick = () => { game.baseSeed = (Math.random() * 1e9) | 0; toa
 $('btn-restart').onclick = () => game.restart();
 $('btn-reroll2').onclick = () => { game.reroll(); toast('此门已由 AI 重铸'); };
 $('env-btn').onclick = () => connectCloud($('env-input').value.trim());
+$('auth-btn').onclick = loginCloud;
+$('auth-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); loginCloud(); } });
 
 renderLevelGrid();
-const savedEnv = localStorage.getItem(KEY_ENV) || new URLSearchParams(location.search).get('env') || '';
+const savedEnv = localStorage.getItem(KEY_ENV) || new URLSearchParams(location.search).get('env') || $('env-input').defaultValue || '';
 const savedAccess = localStorage.getItem(KEY_ACCESS) || '';
-const savedRegion = localStorage.getItem(KEY_REGION) || 'ap-shanghai';
+const savedRegion = localStorage.getItem(KEY_REGION) || $('env-region')?.defaultValue || 'ap-shanghai';
 if (savedEnv) {
   $('env-input').value = savedEnv;
   $('env-access').value = savedAccess;
   $('env-region').value = savedRegion;
-  if (savedAccess) connectCloud(savedEnv);
-  else setAIStatus('本地生成脑（离线可用）', 'off');
-} else {
-  setAIStatus('本地生成脑（离线可用）', 'off');
 }
+if (savedEnv && savedAccess) connectCloud(savedEnv);
+else setAIStatus('本地生成脑（离线可用）', 'off');
 function backToMenu() {
   game.state = 'menu';
   game.input.down = false;

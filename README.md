@@ -7,10 +7,13 @@
 | GitHub Pages（主） | `https://annabellexyq.github.io/exo-pinch/` |
 | 腾讯云 CloudBase（专属域名） | `https://exopinch-ai-native-d7gjgsyyefdea561d.webapps.tcloudbase.com/` |
 | 腾讯云 CloudBase（共享域名路径） | `https://ai-native-d7gjgsyyefdea561d-1302042144.tcloudbaseapp.com/exo-pinch/` |
+| 亮点页 `highlights/`（CloudBase） | `https://ai-native-d7gjgsyyefdea561d-1302042144.tcloudbaseapp.com/highlights/` |
 
 - 仓库：`https://github.com/annabellexyq/exo-pinch`（`main` 分支；Pages 从该分支根目录构建，推送后 1～3 分钟生效）
 - 腾讯云托管：环境 `ai-native-d7gjgsyyefdea561d`（上海 ap-shanghai），托管路径 `exo-pinch/`
   - 专属域名来自 CloudApp（`serviceName=exopinch`，`appPath=/exo-pinch`），网关把它映射到托管的 `/exo-pinch`
+  - 亮点页 `highlights/index.html` 放在**托管根目录下的 `/highlights/`**（注意不是 `/exo-pinch/highlights/`）：
+    `tcb hosting deploy ./highlights highlights -e ai-native-d7gjgsyyefdea561d`
   - ⚠️ 该环境的静态托管只有**一个根目录**，根 `/` 归「窗外信使」，本项目只放 `/exo-pinch/`，**切勿部署到根目录**（会覆盖别的项目入口）
   - ⚠️ 改 `appPath` 必须走 `manageApps deployApp` 并**显式传** `deployCmd="tcb hosting deploy . exo-pinch"`（没有仅改配置的接口），否则流水线的 `tcb hosting deploy` 会覆盖托管根目录
   - 同环境另有「游医天下」（CloudApp `youyitianxia` → `/youyi`）和「窗外信使」（CloudApp `exostory` → 根 `/`），三者互不干扰

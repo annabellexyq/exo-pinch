@@ -125,6 +125,9 @@ body {
   max-width: 720px;
   margin-bottom: 36px;
   text-align: center;
+  /* 中文可在任意两字间断行，窄屏容易把「渗入」这类词拆开、只剩单字孤行。
+     balance 让各行长度更均匀，避免 1～2 字的孤字行；不支持则忽略、回退现状。 */
+  text-wrap: balance;
 }
 .hero-sub b { color: var(--gold); }
 .hero-cta {

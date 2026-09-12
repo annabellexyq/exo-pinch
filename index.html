@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>囊泡漂流 EXO-PINCH · 九关物理闯关</title>
-  <link rel="stylesheet" href="./styles.css?v=12" />
-  <link rel="stylesheet" href="./legend.css?v=12" />
+  <link rel="stylesheet" href="./styles.css?v=15" />
+  <link rel="stylesheet" href="./legend.css?v=15" />
 </head>
 <body>
   <canvas id="stage"></canvas>
@@ -116,10 +116,15 @@
         <span id="ai-status">AI 大脑：本地生成脑（离线可用）</span>
       </div>
       <div class="ai-row inputs">
-        <input id="env-input" placeholder="CloudBase 环境 ID" />
+        <input id="env-input" placeholder="CloudBase 环境 ID" value="ai-native-d7gjgsyyefdea561d" />
         <input id="env-access" type="password" placeholder="publishable accessKey" />
         <input id="env-region" placeholder="地域，如 ap-shanghai" value="ap-shanghai" />
         <button id="env-btn">接通灵脑</button>
+      </div>
+      <div class="ai-row inputs hidden" id="auth-row">
+        <input id="auth-user" placeholder="云脑用户名" autocomplete="username" />
+        <input id="auth-pass" type="password" placeholder="云脑密码" autocomplete="current-password" />
+        <button id="auth-btn">登录并接通云脑</button>
       </div>
       <div class="row">
         <button id="btn-play" class="primary">开启第一重门</button>
@@ -151,7 +156,7 @@
       btn.addEventListener('pointerup', back);
     })();
   </script>
-  <script type="module" src="./src/legend.js?v=12"></script>
-  <script type="module" src="./src/main.js?v=12"></script>
+  <script type="module" src="./src/legend.js?v=15"></script>
+  <script type="module" src="./src/main.js?v=15"></script>
 </body>
 </html>

@@ -104,18 +104,39 @@ export function generateLocalGenome(blueprint, seed, profile = {}) {
 /*  云脑：CloudBase AI（可选）。未配置 env / 未登录 / 调用失败 -> 返回 null，由调用方降级 */
 /* ------------------------------------------------------------------ */
 
-const SDK_CDN = 'https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@3/dist/cloudbase.full.js';
+// @cloudbase/js-sdk v3 只提供 ESM 入口（v2 的 cloudbase.full.js 全局构建已不存在），
+// 因此改用动态 import() 载入，并准备多个 CDN 源兜底。
+const SDK_CDNS = [
+  'https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@3.9.3/+esm',
+  'https://esm.sh/@cloudbase/js-sdk@3.9.3',
+  'https://esm.run/@cloudbase/js-sdk@3.9.3',
+];
 
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    if (typeof document === 'undefined') return reject(new Error('非浏览器环境'));
-    const s = document.createElement('script');
-    s.src = src;
-    s.crossOrigin = 'anonymous';
-    s.onload = resolve;
-    s.onerror = () => reject(new Error('无法加载 CloudBase SDK，请检查网络或刷新重试'));
-    document.head.appendChild(s);
-  });
+let sdkPromise = null;
+async function loadCloudbase() {
+  if (typeof window === 'undefined') throw new Error('非浏览器环境');
+  const cached = window.cloudbase || window.cloudbase?.default;
+  if (cached && typeof cached.init === 'function') return cached;
+  if (sdkPromise) return sdkPromise;
+  sdkPromise = (async () => {
+    const errors = [];
+    for (const src of SDK_CDNS) {
+      try {
+        const mod = await import(/* webpackIgnore: true */ src);
+        const cb = mod?.default || mod?.cloudbase || mod;
+        if (cb && typeof cb.init === 'function') {
+          window.cloudbase = cb;      // 缓存，避免重复下载
+          return cb;
+        }
+        errors.push(`${src}：未导出 init`);
+      } catch (e) {
+        errors.push(`${src}：${e?.message || e}`);
+      }
+    }
+    sdkPromise = null;
+    throw new Error(`无法加载 CloudBase SDK（已尝试 ${SDK_CDNS.length} 个源）`);
+  })();
+  return sdkPromise;
 }
 
 export class CloudBrain {
@@ -131,23 +152,33 @@ export class CloudBrain {
     this.onStatus = opts.onStatus || (() => {});
   }
 
-  async init() {
+  /** 加载 SDK 并 init 应用实例（不判断登录态） */
+  async ensureApp() {
+    if (this.app) return true;
     if (!this.env) { this.reason = '未配置 CloudBase 环境 ID'; return false; }
-    if (!this.accessKey) { this.reason = '缺少 publishable accessKey（环境 API Key）'; return false; }
+    if (!this.accessKey) { this.reason = '缺少 publishable accessKey（环境发布密钥）'; return false; }
     try {
       this.onStatus('正在连接 CloudBase…');
-      let cloudbase = typeof window !== 'undefined' ? (window.cloudbase || window.cloudbase?.default) : null;
-      if (!cloudbase) {
-        await loadScript(SDK_CDN);
-        cloudbase = window.cloudbase || window.cloudbase?.default;
-      }
-      if (!cloudbase) throw new Error('CloudBase SDK 加载失败');
+      const cloudbase = await loadCloudbase();
       this.app = cloudbase.init({
         env: this.env,
         region: this.region,
         accessKey: this.accessKey,
         auth: { detectSessionInUrl: true },
       });
+      return true;
+    } catch (e) {
+      this.reason = `云脑不可用：${e?.message || e}`;
+      this.onStatus(this.reason);
+      return false;
+    }
+  }
+
+  /** 检查登录态：未登录返回 false（交给调用方走 login） */
+  async init() {
+    const ok = await this.ensureApp();
+    if (!ok) return false;
+    try {
       const { data, error } = await this.app.auth.getSession();
       if (error) throw new Error(error.message || '获取登录态失败');
       const session = data && data.session;
@@ -168,6 +199,25 @@ export class CloudBrain {
       this.reason = `云脑不可用：${e?.message || e}`;
       this.onStatus(this.reason);
       return false;
+    }
+  }
+
+  /** 用户名/密码登录（环境已开启 usernamePassword）；成功后即可调用模型 */
+  async login(username, password) {
+    const ok = await this.ensureApp();
+    if (!ok) return { ok: false, reason: this.reason };
+    try {
+      this.onStatus('正在登录…');
+      const { data, error } = await this.app.auth.signInWithPassword({ username, password });
+      if (error) throw new Error(error.message || '登录失败');
+      this.ready = true;
+      this.onStatus('云脑已就绪');
+      return { ok: true, user: data?.user || null };
+    } catch (e) {
+      this.ready = false;
+      const reason = e?.message || String(e);
+      this.onStatus(`登录失败：${reason}`);
+      return { ok: false, reason };
     }
   }
 
