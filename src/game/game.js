@@ -6,7 +6,7 @@ import {
 } from '../core/physics.js';
 import { World, CARGO_TYPES } from './world.js';
 import { Exosome } from './exosome.js';
-import { generateLevel, Director, LEVEL_BLUEPRINTS } from '../ai/brains.js?v=19';
+import { generateLevel, Director, LEVEL_BLUEPRINTS } from '../ai/brains.js?v=20';
 
 const FIXED = 1 / 120;
 

@@ -1,8 +1,8 @@
 // 入口：装配游戏、AI 大脑、HUD 与各类界面
 
-import { Game } from './game/game.js?v=19';
-import { Renderer } from './game/render.js?v=19';
-import { CloudBrain } from './ai/brains.js?v=19';
+import { Game } from './game/game.js?v=20';
+import { Renderer } from './game/render.js?v=20';
+import { CloudBrain } from './ai/brains.js?v=20';
 import { LEVEL_BLUEPRINTS } from './ai/genome.js';
 
 const $ = (id) => document.getElementById(id);
