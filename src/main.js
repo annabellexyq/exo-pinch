@@ -24,10 +24,14 @@ const KEY_ENV = 'exo_pinch_env';
 const KEY_ACCESS = 'exo_pinch_access';
 const KEY_REGION = 'exo_pinch_region';
 const KEY_MODEL = 'exo_pinch_model';
+const KEY_API_URL = 'exo_pinch_api_url';
+const KEY_API_KEY = 'exo_pinch_api_key';
+const KEY_API_MODEL = 'exo_pinch_api_model';
 const progress = { unlocked: Math.max(1, Number(localStorage.getItem(KEY_UNLOCK) || 1)) };
 
 let brain = null;
 let cloudBrain = null;
+let apiBrain = null;   // 专属 API 脑（优先级最高；留空则走云脑 / 本地脑）
 
 function setAIStatus(text, kind = 'ok') {
   $('ai-status').textContent = `AI 大脑：${text}`;
@@ -114,7 +118,6 @@ function persistConfig(b) {
 
 /** 登录通过后再真实打一次模型：通了才算接通，否则退回本地脑并如实提示 */
 async function activate(b) {
-  persistConfig(b);
   showAuthRow(false);
   setAIStatus(`正在验证 ${b.modelId}…`, 'warn');
   const probe = await b.probe();
@@ -122,7 +125,7 @@ async function activate(b) {
     brain = b;
     game.brain = b;
     game.director.cloud = b;
-    setAIStatus(`云脑已连接 · ${b.modelId}`);
+    setAIStatus(`${b.kind === 'api-brain' ? '专属 API' : '云脑'}已连接 · ${b.modelId}`);
     syncBrainBadge();
     return true;
   }
@@ -139,12 +142,40 @@ async function connectCloud(envId) {
   if (!b) return;
   const ok = await b.init();
   if (ok) {
+    persistConfig(b);
     await activate(b);
   } else {
     setAIStatus(`${friendlyBrainError(b.reason) || '云脑不可用'} · 已降级本地脑`, 'off');
     showAuthRow(/登录/.test(b.reason || ''));
     syncBrainBadge();
   }
+}
+
+/** 依据表单/已存配置取一个 ApiBrain 实例（专属 API 入口，OpenAI 兼容） */
+function ensureApiBrain() {
+  const baseUrl = (($('api-url')?.value || '').trim()) || localStorage.getItem(KEY_API_URL) || '';
+  const apiKey = (($('api-key')?.value || '').trim()) || localStorage.getItem(KEY_API_KEY) || '';
+  const modelId = (($('api-model')?.value || '').trim()) || localStorage.getItem(KEY_API_MODEL) || 'deepseek-chat';
+  if (!baseUrl || !apiKey) { setAIStatus('专属 API 未配置（填地址与 Key 后接通）', 'off'); return null; }
+  if (apiBrain && apiBrain.baseUrl === baseUrl && apiBrain.apiKey === apiKey && apiBrain.modelId === modelId) return apiBrain;
+  apiBrain = new ApiBrain({ baseUrl, apiKey, modelId, onStatus: (s) => setAIStatus(s, 'warn') });
+  return apiBrain;
+}
+
+/** 接通专属 API：成功后关卡与文案由该 API 实时生成；失败自动降级本地脑 */
+async function connectApi() {
+  const b = ensureApiBrain();
+  if (!b) return;
+  const ok = await b.init();
+  if (!ok) {
+    setAIStatus(`${friendlyBrainError(b.reason) || '专属 API 不可用'} · 已降级本地脑`, 'off');
+    syncBrainBadge();
+    return;
+  }
+  localStorage.setItem(KEY_API_URL, b.baseUrl);
+  localStorage.setItem(KEY_API_KEY, b.apiKey);
+  localStorage.setItem(KEY_API_MODEL, b.modelId);
+  await activate(b);
 }
 
 /** 用户名/密码登录成功后立即接通云脑 */
@@ -158,6 +189,7 @@ async function loginCloud() {
   const res = await b.login(user, pass);
   if (!res.ok) { setAIStatus(`登录失败：${res.reason}`, 'off'); return; }
   $('auth-pass').value = '';
+  persistConfig(b);
   await activate(b);
 }
 
@@ -375,11 +407,19 @@ $('btn-play').onclick = () => game.loadLevel(Math.min(progress.unlocked - 1, LEV
 $('btn-reroll').onclick = () => { game.baseSeed = (Math.random() * 1e9) | 0; toast('星盘已重掷'); };
 $('btn-restart').onclick = () => game.restart();
 $('btn-reroll2').onclick = () => { game.reroll(); toast('此门已由 AI 重铸'); };
+$('api-btn').onclick = connectApi;
 $('env-btn').onclick = () => connectCloud($('env-input').value.trim());
 $('auth-btn').onclick = loginCloud;
 $('auth-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); loginCloud(); } });
 
 renderLevelGrid();
+// 恢复专属 API 配置（留空不影响；接通后优先于云脑）
+const savedApiUrl = localStorage.getItem(KEY_API_URL) || '';
+const savedApiKey = localStorage.getItem(KEY_API_KEY) || '';
+const savedApiModel = localStorage.getItem(KEY_API_MODEL) || '';
+if ($('api-url')) $('api-url').value = savedApiUrl;
+if ($('api-model')) $('api-model').value = savedApiModel || $('api-model').defaultValue || 'deepseek-chat';
+
 const savedEnv = localStorage.getItem(KEY_ENV) || new URLSearchParams(location.search).get('env') || $('env-input').defaultValue || '';
 const savedAccess = localStorage.getItem(KEY_ACCESS) || '';
 const savedRegion = localStorage.getItem(KEY_REGION) || $('env-region')?.defaultValue || 'ap-shanghai';
@@ -402,7 +442,9 @@ $('model-select')?.addEventListener('change', () => {
   const key = ($('env-access')?.value || '').trim() || localStorage.getItem(KEY_ACCESS) || '';
   if (envId && key) connectCloud(envId);
 });
-if (savedEnv && savedAccess) connectCloud(savedEnv);
+// 优先级：专属 API > CloudBase 云脑 > 本地脑（未配置时保持本地，游戏照常）
+if (savedApiUrl && savedApiKey) connectApi();
+else if (savedEnv && savedAccess) connectCloud(savedEnv);
 else setAIStatus('本地生成脑（离线可用）', 'off');
 syncBrainBadge();
 function backToMenu() {
