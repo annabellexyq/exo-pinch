@@ -115,6 +115,12 @@
         <span id="ai-status">AI 大脑：本地生成脑（离线可用）</span>
       </div>
       <div class="ai-row inputs">
+        <input id="api-url" placeholder="专属 API 地址（OpenAI 兼容，如 https://api.deepseek.com/v1）" />
+        <input id="api-key" type="password" placeholder="专属 API Key（留空则用云脑 / 本地脑）" />
+        <input id="api-model" placeholder="模型名，如 deepseek-chat" value="deepseek-chat" />
+        <button id="api-btn">接通专属 API</button>
+      </div>
+      <div class="ai-row inputs">
         <input id="env-input" placeholder="CloudBase 环境 ID" value="ai-native-d7gjgsyyefdea561d" />
         <input id="env-access" type="password" placeholder="publishable accessKey" />
         <input id="env-region" placeholder="地域，如 ap-shanghai" value="ap-shanghai" />
@@ -162,7 +168,7 @@
       btn.addEventListener('pointerup', back);
     })();
   </script>
-  <script type="module" src="./src/legend.js?v=21"></script>
-  <script type="module" src="./src/main.js?v=21"></script>
+  <script type="module" src="./src/legend.js?v=22"></script>
+  <script type="module" src="./src/main.js?v=22"></script>
 </body>
 </html>
