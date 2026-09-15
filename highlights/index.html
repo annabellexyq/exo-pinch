@@ -815,6 +815,21 @@ for (let i = 0; i < 120; i++) {
   s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;width:${size}px;height:${size}px;animation-delay:${Math.random()*3}s;`;
   starsContainer.appendChild(s);
 }
+
+// 「开始游戏」一律指向**同源**的游戏入口，避免手机上被带进腾讯云测试域名的中间页
+// （从 GitHub Pages 点过去会落到 tcloudbaseapp.com，那一步在手机内置浏览器里会卡住/黑屏）
+// GitHub Pages 版 → 同源 /exo-pinch/；腾讯云托管版 → 共享域名下的 /exo-pinch/
+(function () {
+  var onPages = /(^|\.)github\.io$/i.test(location.hostname);
+  var target = onPages
+    ? new URL('../', location.href).href
+    : 'https://ai-native-d7gjgsyyefdea561d-1302042144.tcloudbaseapp.com/exo-pinch/';
+  Array.prototype.forEach.call(document.querySelectorAll('a[href*="exo-pinch/"]'), function (a) {
+    a.setAttribute('href', target);
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener');
+  });
+})();
 </script>
 
 </body>
