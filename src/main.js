@@ -1,8 +1,8 @@
 // 入口：装配游戏、AI 大脑、HUD 与各类界面
 
-import { Game } from './game/game.js?v=21';
+import { Game } from './game/game.js?v=22';
 import { Renderer } from './game/render.js?v=21';
-import { CloudBrain } from './ai/brains.js?v=21';
+import { CloudBrain, ApiBrain } from './ai/brains.js?v=22';
 import { LEVEL_BLUEPRINTS } from './ai/genome.js';
 
 const $ = (id) => document.getElementById(id);
@@ -35,6 +35,7 @@ let apiBrain = null;   // 专属 API 脑（优先级最高；留空则走云脑 
 
 function setAIStatus(text, kind = 'ok') {
   $('ai-status').textContent = `AI 大脑：${text}`;
+  $('ai-status').title = text;          // 状态行会被省略号截断，悬停可看完整信息
   const dot = $('ai-dot');
   dot.className = 'ai-dot' + (kind === 'ok' ? '' : kind === 'warn' ? ' warn' : ' off');
 }
@@ -45,11 +46,16 @@ function showAuthRow(show) {
   if (row) row.classList.toggle('hidden', !show);
 }
 
-/** HUD 右上角标明当前用的是云脑还是本地脑（brain 为空即本地） */
+/** HUD 右上角标明当前用的是专属 API / 云脑 / 本地脑（brain 为空即本地） */
 function syncBrainBadge() {
   const el = $('brain-badge');
   if (!el) return;
-  if (brain) {
+  const kind = !brain ? 'local' : (brain.kind === 'api-brain' || brain.group === 'api') ? 'api' : 'cloud';
+  if (kind === 'api') {
+    el.className = 'brain-badge api';
+    el.textContent = '专属 API';
+    el.title = `关卡由你的专属 API 生成：${brain.modelId}`;
+  } else if (kind === 'cloud') {
     el.className = 'brain-badge cloud';
     el.textContent = '云脑';
     el.title = `关卡由 CloudBase 云脑生成：${brain.group} / ${brain.modelId}`;
@@ -118,14 +124,14 @@ function persistConfig(b) {
 
 /** 登录通过后再真实打一次模型：通了才算接通，否则退回本地脑并如实提示 */
 async function activate(b) {
-  showAuthRow(false);
+  // 不在这里异步收起登录行：它已在首屏同步渲染，异步收起会让下方内容上下跳动
   setAIStatus(`正在验证 ${b.modelId}…`, 'warn');
   const probe = await b.probe();
   if (probe.ok) {
     brain = b;
     game.brain = b;
     game.director.cloud = b;
-    setAIStatus(`${b.kind === 'api-brain' ? '专属 API' : '云脑'}已连接 · ${b.modelId}`);
+    setAIStatus(`${b.kind === 'api-brain' ? '专属 API' : '云脑'} 已连接 · ${b.modelId}`);
     syncBrainBadge();
     return true;
   }
@@ -140,14 +146,19 @@ async function activate(b) {
 async function connectCloud(envId) {
   const b = ensureCloudBrain(envId);
   if (!b) return;
+  toast('正在接通云脑…');
   const ok = await b.init();
   if (ok) {
     persistConfig(b);
-    await activate(b);
+    const connected = await activate(b);
+    toast(connected ? `云脑已连接 · ${b.modelId}` : '云脑验证失败，已降级本地脑');
   } else {
     setAIStatus(`${friendlyBrainError(b.reason) || '云脑不可用'} · 已降级本地脑`, 'off');
-    showAuthRow(/登录/.test(b.reason || ''));
+    // 只负责「露出」，不再在此收起：收起会让下方内容上跳
+    if (/登录/.test(b.reason || '')) showAuthRow(true);
     syncBrainBadge();
+    toast(/登录/.test(b.reason || '') ? '云脑需要登录，已展开登录行' : '云脑不可用，已降级本地脑');
+    console.warn('[云脑]', b.reason);
   }
 }
 
@@ -165,17 +176,22 @@ function ensureApiBrain() {
 /** 接通专属 API：成功后关卡与文案由该 API 实时生成；失败自动降级本地脑 */
 async function connectApi() {
   const b = ensureApiBrain();
-  if (!b) return;
+  if (!b) { toast('请先填写 API 地址与 Key'); return; }
+  toast('正在接通专属 API…');
   const ok = await b.init();
   if (!ok) {
     setAIStatus(`${friendlyBrainError(b.reason) || '专属 API 不可用'} · 已降级本地脑`, 'off');
     syncBrainBadge();
+    toast('专属 API 不可用，已降级本地脑');
+    console.warn('[专属API]', b.reason);
     return;
   }
   localStorage.setItem(KEY_API_URL, b.baseUrl);
   localStorage.setItem(KEY_API_KEY, b.apiKey);
   localStorage.setItem(KEY_API_MODEL, b.modelId);
-  await activate(b);
+  const connected = await activate(b);
+  toast(connected ? `专属 API 已连接 · ${b.modelId}` : '验证失败，已降级本地脑');
+  if (!connected) console.warn('[专属API]', b.reason);
 }
 
 /** 用户名/密码登录成功后立即接通云脑 */
@@ -187,8 +203,14 @@ async function loginCloud() {
   const b = ensureCloudBrain(envId);
   if (!b) { showAuthRow(true); return; }
   const res = await b.login(user, pass);
-  if (!res.ok) { setAIStatus(`登录失败：${res.reason}`, 'off'); return; }
+  if (!res.ok) {
+    setAIStatus(`登录失败：${res.reason}`, 'off');
+    toast('登录失败：' + (res.reason || ''));
+    console.warn('[云脑登录]', res.reason);
+    return;
+  }
   $('auth-pass').value = '';
+  showAuthRow(false);          // 登录成功后收起（用户操作触发，不是异步跳动）
   persistConfig(b);
   await activate(b);
 }
@@ -297,7 +319,9 @@ function showIntro(g, index) {
   $('result').classList.add('hidden');
   $('menu').classList.add('hidden');
   $('in-stage').textContent = `第 ${index + 1} 重门 · ${index + 1}/${LEVEL_BLUEPRINTS.length}`;
-  $('in-src').textContent = g.source === 'cloud-brain' ? '云脑开示' : '灵媒自生 · seed ' + game.seed;
+  $('in-src').textContent = g.source === 'api-brain' ? '专属 API 开示'
+    : g.source === 'cloud-brain' ? '云脑开示'
+    : '灵媒自生 · seed ' + game.seed;
   $('in-title').innerHTML = `${g.name} <em>${g.codename}</em>`;
   $('in-brief').textContent = g.brief;
   $('in-obj').textContent = `${g.objective}（时之窗 ${g.goals.timeLimit}s · 初始以太 ${g.goals.startEnergy}）`;
@@ -444,7 +468,8 @@ $('model-select')?.addEventListener('change', () => {
 });
 // 优先级：专属 API > CloudBase 云脑 > 本地脑（未配置时保持本地，游戏照常）
 if (savedApiUrl && savedApiKey) connectApi();
-else if (savedEnv && savedAccess) connectCloud(savedEnv);
+// 有云脑配置：登录行与首屏一起渲染，避免异步探测后才出现把下方内容顶下去
+else if (savedEnv && savedAccess) { showAuthRow(true); connectCloud(savedEnv); }
 else setAIStatus('本地生成脑（离线可用）', 'off');
 syncBrainBadge();
 function backToMenu() {
@@ -454,6 +479,9 @@ function backToMenu() {
   openMenu();
 }
 window.__exoBackToMenu = backToMenu;          // 供 index.html 内联脚本兜底调用
+window.__exoLoadLevel = (i) => {              // 同上：首屏兜底渲染的章节按钮走这里
+  if (game && typeof game.loadLevel === 'function') game.loadLevel(i);
+};
 window.addEventListener('exo:menu', backToMenu);
 $('btn-menu').addEventListener('click', backToMenu);
 $('clear-menu').onclick = () => { $('clear').classList.add('hidden'); openMenu(); };

@@ -167,8 +167,33 @@
       btn.addEventListener('click', back);
       btn.addEventListener('pointerup', back);
     })();
+
+    // 兜底二号：首屏立即渲染九个章节按钮。
+    // main.js 是 module，需等 game/render/brains/genome 下载完才执行 renderLevelGrid()，
+    // 否则菜单静态部分先画、按钮晚一拍才冒出来。名称与 src/ai/genome.js 的 LEVEL_BLUEPRINTS 一致；
+    // 模块就绪后 main.js 会用同样内容再渲染一次，无副作用。
+    (function () {
+      var NAMES = ['离巢', '糖萼', '受体之门', '巨人之胃', '信息排队', '能量枯竭', '核周风暴', '双膜迷宫', '分泌终章'];
+      var grid = document.getElementById('level-grid');
+      if (!grid || grid.children.length) return;
+      var unlocked = Math.max(1, Number(localStorage.getItem('exo_pinch_unlocked') || 1));
+      var html = '';
+      for (var i = 0; i < NAMES.length; i++) {
+        var locked = i + 1 > unlocked;
+        var cls = locked ? 'locked' : (i + 1 < unlocked ? 'done' : '');
+        html += '<button class="' + cls + '" data-lv="' + i + '"'
+          + (locked ? ' title="未解锁" disabled' : '') + '>'
+          + (i + 1) + '<small>' + NAMES[i] + '</small></button>';
+      }
+      grid.innerHTML = html;
+      grid.addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-lv]');
+        if (!b || b.disabled) return;
+        if (typeof window.__exoLoadLevel === 'function') window.__exoLoadLevel(Number(b.dataset.lv));
+      });
+    })();
   </script>
   <script type="module" src="./src/legend.js?v=22"></script>
-  <script type="module" src="./src/main.js?v=22"></script>
+  <script type="module" src="./src/main.js?v=26"></script>
 </body>
 </html>

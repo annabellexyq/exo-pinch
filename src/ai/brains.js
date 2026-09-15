@@ -330,18 +330,30 @@ export class ApiBrain {
   /** 统一 chat 调用：OpenAI 兼容 POST /chat/completions */
   async chat(messages, temperature) {
     if (!this.configured) throw new Error('专属 API 未配置');
-    const res = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.modelId,
-        temperature: typeof temperature === 'number' ? temperature : this.temperature,
-        messages,
-      }),
-    });
+    // 30s 超时：地址写错 / 网络不通时不会一直卡在「正在验证…」，而是如实报错并降级本地脑
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 30000);
+    let res;
+    try {
+      res = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
+        },
+        signal: ctl.signal,
+        body: JSON.stringify({
+          model: this.modelId,
+          temperature: typeof temperature === 'number' ? temperature : this.temperature,
+          messages,
+        }),
+      });
+    } catch (e) {
+      clearTimeout(timer);
+      if (e?.name === 'AbortError') throw new Error('请求超时（30s 无响应）');
+      throw new Error(`连接失败：${e?.message || e}`);
+    }
+    clearTimeout(timer);
     if (!res.ok) {
       const t = await res.text().catch(() => '');
       throw new Error(`HTTP ${res.status} ${String(t).slice(0, 120)}`);
